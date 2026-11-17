@@ -1,0 +1,12 @@
+# Core runtime: the operator replacement and the protocol adapter only need torch.
+torch>=2.1
+# Used by the evaluation helpers for array interchange; the metrics themselves
+# are pure standard library.
+numpy>=1.24
+# Optional integrations: loading a real Qwen3-VL checkpoint and LoRA adapters.
+transformers>=4.45
+peft>=0.10
+# Optional: only for image_fingerprint() in eval/leak_guard.py.
+Pillow>=10.0
+# Tests.
+pytest>=7.4

@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Model weights and training state
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.ckpt
+optimizer.pt
+scheduler.pt
+rng_state.pth
+
+# Data and outputs
+data/
+artifacts/
+outputs/
+runs/
+*.parquet
+*.arrow
+*.jsonl.gz
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Images and media (never commit screenshots)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.webp
+*.mp4
+
+# Local configuration and secrets
+.env
+.env.*
+*.local
+secrets.json
+
+# Logs and OS noise
+*.log
+.DS_Store
+Thumbs.db
