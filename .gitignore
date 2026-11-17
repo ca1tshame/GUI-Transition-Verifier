@@ -47,6 +47,9 @@ runs/
 *.local
 secrets.json
 
+# Local tooling state
+.workbuddy/
+
 # Logs and OS noise
 *.log
 .DS_Store
