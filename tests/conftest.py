@@ -1,8 +1,5 @@
-"""Make the repository root importable when running ``pytest`` from anywhere."""
+"""Shared pytest configuration.
 
-import pathlib
-import sys
-
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+Repository-root import discovery and cache-provider flags are configured
+declaratively under ``[tool.pytest.ini_options]`` in ``pyproject.toml``.
+"""

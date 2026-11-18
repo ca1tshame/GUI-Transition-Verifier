@@ -13,8 +13,9 @@ scan. That is the only reason for the string concatenation below.
 
 Usage::
 
-    python tools/audit_repo.py
-    python tools/audit_repo.py --json audit.json
+    python -B tools/audit_repo.py
+    python -B tools/audit_repo.py --tracked-only
+    python -B tools/audit_repo.py --json audit.json
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ import argparse
 import json
 import pathlib
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 
@@ -51,7 +53,15 @@ FORBIDDEN_SUFFIXES = {
     ".mp4",
 }
 
-SKIP_DIRS = {".git", ".venv", "venv", "__pycache__", ".pytest_cache", ".mypy_cache"}
+SKIP_DIRS = {
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".workbuddy",
+}
 
 # Sensitive literals are split so the audit file itself stays clean.
 SENSITIVE_PATTERNS = {
@@ -71,6 +81,7 @@ SENSITIVE_PATTERNS = {
 @dataclass
 class AuditResult:
     root: str
+    tracked_only: bool = False
     files: int = 0
     total_bytes: int = 0
     oversized: list[dict] = field(default_factory=list)
@@ -85,6 +96,7 @@ class AuditResult:
     def as_dict(self) -> dict:
         return {
             "root": self.root,
+            "tracked_only": self.tracked_only,
             "files": self.files,
             "total_bytes": self.total_bytes,
             "ok": self.ok,
@@ -105,12 +117,32 @@ def iter_files(root: pathlib.Path):
         yield path
 
 
-def audit(root: pathlib.Path) -> AuditResult:
-    result = AuditResult(root=str(root))
-    compiled = {name: re.compile(pattern) for name, pattern in SENSITIVE_PATTERNS.items()}
+def iter_tracked_files(root: pathlib.Path):
+    completed = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z"],
+        check=True,
+        capture_output=True,
+    )
+    entries = sorted(
+        entry for entry in completed.stdout.decode("utf-8").split("\0") if entry
+    )
+    for rel in entries:
+        path = root / rel
+        if not path.is_file():
+            continue
+        relative_parts = path.relative_to(root).parts
+        if any(part in SKIP_DIRS for part in relative_parts[:-1]):
+            continue
+        yield path
 
-    for path in iter_files(root):
-        relative = str(path.relative_to(root))
+
+def audit(root: pathlib.Path, *, tracked_only: bool = False) -> AuditResult:
+    result = AuditResult(root=str(root), tracked_only=tracked_only)
+    compiled = {name: re.compile(pattern) for name, pattern in SENSITIVE_PATTERNS.items()}
+    file_iter = iter_tracked_files(root) if tracked_only else iter_files(root)
+
+    for path in file_iter:
+        relative = path.relative_to(root).as_posix()
         size = path.stat().st_size
         result.files += 1
         result.total_bytes += size
@@ -140,19 +172,25 @@ def audit(root: pathlib.Path) -> AuditResult:
                     }
                 )
 
-    for directory in SKIP_DIRS:
-        if (root / directory).exists():
-            result.skipped.append(directory)
+    if not tracked_only:
+        for directory in sorted(SKIP_DIRS):
+            if (root / directory).exists():
+                result.skipped.append(directory)
     return result
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit the repository before publishing.")
     parser.add_argument("--root", default=str(pathlib.Path(__file__).resolve().parents[1]))
+    parser.add_argument(
+        "--tracked-only",
+        action="store_true",
+        help="Scan only files tracked in the Git index (`git ls-files`).",
+    )
     parser.add_argument("--json", dest="json_path", default=None)
     args = parser.parse_args(argv)
 
-    result = audit(pathlib.Path(args.root).resolve())
+    result = audit(pathlib.Path(args.root).resolve(), tracked_only=args.tracked_only)
     payload = json.dumps(result.as_dict(), indent=2)
     print(payload)
     if args.json_path:
@@ -161,8 +199,9 @@ def main(argv: list[str] | None = None) -> int:
     if not result.ok:
         print("AUDIT FAILED", file=sys.stderr)
         return 1
+    mode_label = "tracked files" if args.tracked_only else "files"
     print(
-        f"AUDIT PASSED: {result.files} files, {result.total_bytes / 1024:.1f} KiB, "
+        f"AUDIT PASSED: {result.files} {mode_label}, {result.total_bytes / 1024:.1f} KiB, "
         "no oversize files, no forbidden formats, no sensitive strings",
         file=sys.stderr,
     )

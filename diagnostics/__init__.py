@@ -1,4 +1,4 @@
-"""Post-training diagnostics: gradient conflict and selective abstention."""
+"""Post-training diagnostics: gradient conflict, selective abstention, calibration."""
 
 from .gradient_conflict import (
     bootstrap_ci,
@@ -9,27 +9,51 @@ from .gradient_conflict import (
 )
 from .selective_abstention import (
     Decision,
+    PROGRESS_LABELS,
+    apply_binary_platt,
+    apply_temperature,
+    audit_temperature_vs_platt_auc,
+    binary_platt,
+    brier_binary,
+    brier_multiclass,
     decide,
     evaluate_decisions,
     expected_calibration_error,
     fit_temperature,
+    negative_log_likelihood,
+    oracle_review_curve,
     progress_feedback,
+    reliability_bins,
     risk_coverage_curve,
     risk_scores,
+    roc_auc,
+    selective_accuracy,
 )
 
 __all__ = [
     "Decision",
+    "PROGRESS_LABELS",
+    "apply_binary_platt",
+    "apply_temperature",
+    "audit_temperature_vs_platt_auc",
+    "binary_platt",
     "bootstrap_ci",
+    "brier_binary",
+    "brier_multiclass",
     "cosine",
     "decide",
     "evaluate_decisions",
     "expected_calibration_error",
     "fit_temperature",
     "layer_conflict_table",
+    "negative_log_likelihood",
+    "oracle_review_curve",
     "parse_lora_param",
     "progress_feedback",
+    "reliability_bins",
     "risk_coverage_curve",
     "risk_scores",
+    "roc_auc",
+    "selective_accuracy",
     "summarize_cosines",
 ]

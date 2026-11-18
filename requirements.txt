@@ -1,12 +1,17 @@
-# Core runtime: the operator replacement and the protocol adapter only need torch.
-torch>=2.1
-# Used by the evaluation helpers for array interchange; the metrics themselves
-# are pure standard library.
-numpy>=1.24
-# Optional integrations: loading a real Qwen3-VL checkpoint and LoRA adapters.
-transformers>=4.45
-peft>=0.10
-# Optional: only for image_fingerprint() in eval/leak_guard.py.
-Pillow>=10.0
-# Tests.
-pytest>=7.4
+# Core stdlib modules (protocols, eval, diagnostics.selective_abstention,
+# prm.controller) declare zero runtime dependencies (`dependencies = []` in
+# pyproject.toml). The active pins below install the local CPU verification
+# stack (`[torch]` + `[dev]`).
+
+# Tensor and operator modules (`[torch]` extra: fastpe, training, prm.scoring,
+# diagnostics.gradient_conflict)
+torch>=2.1,<3.0
+
+# Test runner (`[dev]` extra)
+pytest>=7.4,<9.0
+
+# Optional Qwen3-VL checkpoint, LoRA adapter, and image-hashing dependencies
+# (`[qwen]` extra: `pip install ".[qwen]"` or `pip install ".[all]"`):
+# transformers>=4.45,<5.0
+# peft>=0.10,<1.0
+# Pillow>=10.0,<12.0

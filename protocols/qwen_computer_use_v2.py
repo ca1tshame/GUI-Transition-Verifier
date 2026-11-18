@@ -20,6 +20,9 @@ untouched.
 This module therefore:
 * declares the schema (:data:`TOOL_SCHEMA`),
 * parses exactly one complete tool call and rejects everything else,
+* rejects booleans masquerading as integers across coordinates, ``pixels``,
+  ``time``, and :class:`Geometry` dimensions,
+* rejects undeclared extra keys in ``arguments`` per action,
 * converts coordinates once, with bounds checks that fail closed,
 * validates action payloads before an environment ever sees them.
 
@@ -36,15 +39,18 @@ from typing import Any, Mapping, Sequence
 
 __all__ = [
     "ACTION_NAMES",
+    "ALLOWED_ARGUMENT_KEYS",
     "ALLOWED_KEYS",
     "COORDINATE_SPACES",
     "MAX_SCROLL_PIXELS",
     "MAX_TEXT_LENGTH",
+    "MAX_WAIT_TIME",
     "PROTOCOL_ID",
     "SCHEMA_VERSION",
     "TOOL_SCHEMA",
     "Geometry",
     "ParsedAction",
+    "ProtocolError",
     "ToolCallError",
     "parse_tool_call",
     "render_tool_call",
@@ -55,10 +61,11 @@ SCHEMA_VERSION = "qwen-computer-use-browsergym-v2.1"
 PROTOCOL_ID = SCHEMA_VERSION
 
 COORDINATE_SPACES = ("pixel", "normalized")
-ACTION_NAMES = ("left_click", "type", "scroll", "key", "terminate")
+ACTION_NAMES = ("left_click", "type", "scroll", "key", "wait", "terminate")
 
 MAX_TEXT_LENGTH = 200
 MAX_SCROLL_PIXELS = 600
+MAX_WAIT_TIME = 30.0
 
 ALLOWED_KEYS = frozenset(
     {
@@ -75,6 +82,15 @@ ALLOWED_KEYS = frozenset(
         "ControlOrMeta+a",
     }
 )
+
+ALLOWED_ARGUMENT_KEYS: dict[str, frozenset[str]] = {
+    "left_click": frozenset({"action", "coordinate"}),
+    "type": frozenset({"action", "text"}),
+    "scroll": frozenset({"action", "coordinate", "pixels"}),
+    "key": frozenset({"action", "keys"}),
+    "wait": frozenset({"action", "time"}),
+    "terminate": frozenset({"action", "status"}),
+}
 
 TOOL_SCHEMA: dict[str, Any] = {
     "type": "function",
@@ -97,6 +113,7 @@ TOOL_SCHEMA: dict[str, Any] = {
                 "text": {"type": "string"},
                 "keys": {"type": "array", "items": {"type": "string"}},
                 "pixels": {"type": "integer"},
+                "time": {"type": "number"},
                 "status": {"type": "string", "enum": ["success", "failure"]},
             },
             "required": ["action"],
@@ -110,8 +127,27 @@ _TOOL_CALL_RE = re.compile(
 )
 
 
-class ToolCallError(ValueError):
-    """Raised when a raw model output is not a valid, executable tool call."""
+class ProtocolError(ValueError):
+    """Raised when a raw model output or geometry violates the tool protocol."""
+
+
+# Backward-compatible alias used across existing callers and tests.
+ToolCallError = ProtocolError
+
+
+def _require_strict_int(value: Any, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ProtocolError(f"{name} must be an integer, not {type(value).__name__}")
+    return value
+
+
+def _require_finite_number(value: Any, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ProtocolError(f"{name} must be a number, not {type(value).__name__}")
+    fval = float(value)
+    if not math.isfinite(fval):
+        raise ProtocolError(f"{name} must be finite")
+    return fval
 
 
 @dataclass(frozen=True)
@@ -126,8 +162,10 @@ class Geometry:
     height: int
 
     def __post_init__(self) -> None:
-        if min(int(self.width), int(self.height)) <= 0:
-            raise ValueError("geometry must be positive")
+        w = _require_strict_int(self.width, "geometry width")
+        h = _require_strict_int(self.height, "geometry height")
+        if min(w, h) <= 0:
+            raise ProtocolError("geometry must be positive")
 
 
 @dataclass(frozen=True)
@@ -142,6 +180,7 @@ class ParsedAction:
     keys: tuple[str, ...] | None = None
     pixels: int | None = None
     status: str | None = None
+    time: float | None = None
 
     @property
     def terminates(self) -> bool:
@@ -150,13 +189,10 @@ class ParsedAction:
 
 def _finite_pair(value: Any) -> tuple[float, float]:
     if not isinstance(value, list) or len(value) != 2:
-        raise ToolCallError("coordinate must be a two-element list")
-    for item in value:
-        if isinstance(item, bool) or not isinstance(item, (int, float)):
-            raise ToolCallError("coordinate must contain numbers")
-        if not math.isfinite(item):
-            raise ToolCallError("coordinate must be finite")
-    return float(value[0]), float(value[1])
+        raise ProtocolError("coordinate must be a two-element list")
+    x = _require_finite_number(value[0], "coordinate[0]")
+    y = _require_finite_number(value[1], "coordinate[1]")
+    return x, y
 
 
 def to_screenshot_coords(
@@ -180,26 +216,29 @@ def to_screenshot_coords(
         ``(x, y)`` in screenshot pixel space.
 
     Raises:
-        ToolCallError: unknown space, non-finite value, or out-of-bounds
-            coordinate. Conversion never clamps.
+        ProtocolError: unknown space, boolean or non-finite value, invalid
+            geometry, or out-of-bounds coordinate. Conversion never clamps.
     """
     if space not in COORDINATE_SPACES:
-        raise ToolCallError(f"unknown coordinate space: {space!r}")
+        raise ProtocolError(f"unknown coordinate space: {space!r}")
+    if not isinstance(screenshot, Geometry):
+        raise ProtocolError("screenshot must be a Geometry instance")
     if viewport is not None:
-        Geometry(int(viewport.width), int(viewport.height))
-    if xy is None:
-        raise ToolCallError("missing coordinate")
+        if not isinstance(viewport, Geometry):
+            raise ProtocolError("viewport must be a Geometry instance")
+    if xy is None or isinstance(xy, (str, bytes)) or not isinstance(xy, Sequence):
+        raise ProtocolError("missing or invalid coordinate sequence")
     x, y = _finite_pair(list(xy))
 
     width, height = screenshot.width, screenshot.height
     if space == "pixel":
         if not (0 <= x < width and 0 <= y < height):
-            raise ToolCallError("coordinate out of screenshot bounds")
+            raise ProtocolError("coordinate out of screenshot bounds")
         return x, y
 
     # normalized 0-999: half-open interval, 999 is the last valid cell index.
     if not (0 <= x < 1000 and 0 <= y < 1000):
-        raise ToolCallError("coordinate out of normalized [0, 999] bounds")
+        raise ProtocolError("coordinate out of normalized [0, 999] bounds")
     return x * width / 1000.0, y * height / 1000.0
 
 
@@ -213,36 +252,53 @@ def parse_tool_call(
     """Parse one complete ``<tool_call>`` block into an executable action.
 
     The parser is intentionally strict: partial calls, multiple calls, trailing
-    prose, unknown tool names and malformed payloads all raise
-    :class:`ToolCallError` instead of being repaired. A verifier that guesses
-    what the model meant cannot measure the model.
+    prose, unknown tool names, extra argument keys, boolean-for-integer values,
+    and malformed payloads all raise :class:`ProtocolError` instead of being
+    repaired. A verifier that guesses what the model meant cannot measure the
+    model.
 
     Returns:
         A :class:`ParsedAction` carrying both structured fields and the exact
         BrowserGym command string.
     """
     if not isinstance(raw, str):
-        raise ToolCallError("raw model output must be a string")
+        raise ProtocolError("raw model output must be a string")
+    if not isinstance(screenshot, Geometry):
+        raise ProtocolError("screenshot must be a Geometry instance")
+    if viewport is not None and not isinstance(viewport, Geometry):
+        raise ProtocolError("viewport must be a Geometry instance")
+
     match = _TOOL_CALL_RE.fullmatch(raw)
     if not match:
-        raise ToolCallError("expected a single complete <tool_call> block")
+        raise ProtocolError("expected a single complete <tool_call> block")
 
     try:
         payload = json.loads(match.group(1))
     except json.JSONDecodeError as exc:
-        raise ToolCallError("invalid tool-call JSON") from exc
+        raise ProtocolError("invalid tool-call JSON") from exc
 
     if not isinstance(payload, dict):
-        raise ToolCallError("tool call must be a JSON object")
+        raise ProtocolError("tool call must be a JSON object")
     if payload.get("name") != "computer_use":
-        raise ToolCallError("unexpected tool name")
+        raise ProtocolError("unexpected tool name")
+    extra_payload_keys = sorted(set(payload.keys()) - {"name", "arguments"})
+    if extra_payload_keys:
+        raise ProtocolError(f"unexpected top-level tool-call key(s): {extra_payload_keys}")
+
     arguments = payload.get("arguments")
     if not isinstance(arguments, dict):
-        raise ToolCallError("arguments must be a JSON object")
+        raise ProtocolError("arguments must be a JSON object")
 
     action = arguments.get("action")
-    if action not in ACTION_NAMES:
-        raise ToolCallError(f"unsupported action: {action!r}")
+    if not isinstance(action, str) or action not in ACTION_NAMES:
+        raise ProtocolError(f"unsupported action: {action!r}")
+
+    allowed_arg_keys = ALLOWED_ARGUMENT_KEYS[action]
+    extra_keys = sorted(set(arguments.keys()) - allowed_arg_keys)
+    if extra_keys:
+        raise ProtocolError(
+            f"unexpected argument key(s) for action {action!r}: {extra_keys}"
+        )
 
     if action == "left_click":
         x, y = to_screenshot_coords(
@@ -259,11 +315,9 @@ def parse_tool_call(
         x, y = to_screenshot_coords(
             arguments.get("coordinate"), screenshot, space, viewport=viewport
         )
-        pixels = arguments.get("pixels")
-        if isinstance(pixels, bool) or not isinstance(pixels, int):
-            raise ToolCallError("scroll pixels must be an integer")
+        pixels = _require_strict_int(arguments.get("pixels"), "scroll pixels")
         if not 0 < abs(pixels) <= MAX_SCROLL_PIXELS:
-            raise ToolCallError("scroll pixels out of range")
+            raise ProtocolError("scroll pixels out of range")
         # Official ComputerUse: positive means "up". BrowserGym: positive means
         # "down". The sign is flipped exactly here, and nowhere else.
         return ParsedAction(
@@ -277,9 +331,9 @@ def parse_tool_call(
     if action == "type":
         text = arguments.get("text")
         if not isinstance(text, str) or not text:
-            raise ToolCallError("type requires non-empty text")
+            raise ProtocolError("type requires non-empty text")
         if len(text) > MAX_TEXT_LENGTH:
-            raise ToolCallError("type text exceeds length budget")
+            raise ProtocolError("type text exceeds length budget")
         return ParsedAction(
             action=action,
             command=f"keyboard_type({text!r})",
@@ -290,10 +344,10 @@ def parse_tool_call(
     if action == "key":
         keys = arguments.get("keys")
         if not isinstance(keys, list) or len(keys) != 1:
-            raise ToolCallError("key requires exactly one key")
+            raise ProtocolError("key requires exactly one key")
         key = keys[0]
-        if key not in ALLOWED_KEYS:
-            raise ToolCallError(f"key not in the executable whitelist: {key!r}")
+        if not isinstance(key, str) or key not in ALLOWED_KEYS:
+            raise ProtocolError(f"key not in the executable whitelist: {key!r}")
         return ParsedAction(
             action=action,
             command=f"keyboard_press({key!r})",
@@ -301,9 +355,21 @@ def parse_tool_call(
             keys=(key,),
         )
 
+    if action == "wait":
+        wait_time = _require_finite_number(arguments.get("time"), "wait time")
+        if not 0.0 < wait_time <= MAX_WAIT_TIME:
+            raise ProtocolError("wait time out of range")
+        wait_ms = int(round(wait_time * 1000.0))
+        return ParsedAction(
+            action=action,
+            command=f"noop({wait_ms})",
+            arguments=arguments,
+            time=wait_time,
+        )
+
     status = arguments.get("status")
-    if status not in ("success", "failure"):
-        raise ToolCallError("terminate requires status success or failure")
+    if not isinstance(status, str) or status not in ("success", "failure"):
+        raise ProtocolError("terminate requires status success or failure")
     return ParsedAction(
         action=action,
         command=None,
@@ -315,6 +381,6 @@ def parse_tool_call(
 def render_tool_call(arguments: Mapping[str, Any]) -> str:
     """Render a canonical single tool call, used by tests and fixtures."""
     if not isinstance(arguments, Mapping):
-        raise ToolCallError("arguments must be a mapping")
+        raise ProtocolError("arguments must be a mapping")
     payload = {"name": "computer_use", "arguments": dict(arguments)}
     return "<tool_call>" + json.dumps(payload, separators=(",", ":")) + "</tool_call>"

@@ -1,9 +1,9 @@
-"""Risk-aware selective verification with three decision states.
+"""Risk-aware selective verification, calibration, and ranking invariance audits.
 
 A verifier that is forced to answer every transition will answer some of them
 wrongly. A verifier that can say "I am not sure" turns a fraction of those
 errors into review work. This module implements that second behaviour and, just
-as importantly, scores it honestly.
+as importantly, scores it honestly using only the Python standard library.
 
 Decision states
 ---------------
@@ -20,6 +20,16 @@ Decision states
 
 Priority is ``flag > review > accept``. A high-risk row is never downgraded to
 ``review`` just because the model is uncertain.
+
+Calibration vs cross-sample ranking
+-----------------------------------
+Multiclass Temperature Scaling divides all class logits in a row by a shared
+scalar ``T > 0``. That preserves single-sample ``argmax`` ordering within each
+row, yet **can alter cross-sample ``p1`` ROC-AUC ranking** because the softmax
+denominator ``sum_k exp(z_k / T)`` couples ``p1`` nonlinearly to how competitor
+mass is distributed across classes ``2..K``. By contrast, binary Platt scaling
+``sigmoid(a * logit(p1) + b)`` on ``p1`` alone is a strictly increasing map
+whenever ``a > 0``, strictly preserving cross-sample ``p1`` ROC-AUC ranking.
 """
 
 from __future__ import annotations
@@ -31,10 +41,15 @@ from typing import Sequence
 __all__ = [
     "Decision",
     "PROGRESS_LABELS",
+    "apply_binary_platt",
     "apply_temperature",
+    "audit_temperature_vs_platt_auc",
+    "binary_platt",
+    "brier_binary",
+    "brier_multiclass",
     "decide",
-    "expected_calibration_error",
     "evaluate_decisions",
+    "expected_calibration_error",
     "fit_temperature",
     "negative_log_likelihood",
     "oracle_review_curve",
@@ -42,11 +57,13 @@ __all__ = [
     "reliability_bins",
     "risk_coverage_curve",
     "risk_scores",
+    "roc_auc",
     "selective_accuracy",
 ]
 
 PROGRESS_LABELS = ("progress", "no_progress", "regression", "recovery")
 PROGRESS_REWARDS = (1.0, 0.0, -1.0, 1.0)
+_LOG_EPS = 1e-12
 
 
 class Decision(str, Enum):
@@ -56,10 +73,20 @@ class Decision(str, Enum):
 
 
 def _check_probability(value: float, name: str) -> float:
-    value = float(value)
-    if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be a finite probability, got {value!r}")
-    return value
+    fval = float(value)
+    if not math.isfinite(fval) or not 0.0 <= fval <= 1.0:
+        raise ValueError(f"{name} must be a finite probability, got {value!r}")
+    return fval
+
+
+def _check_binary_label(value: int | bool, name: str = "label") -> int:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int) and value in (0, 1):
+        return value
+    raise ValueError(f"{name} must be 0 or 1, got {value!r}")
 
 
 def decide(
@@ -80,6 +107,8 @@ def decide(
     """
     confidence = _check_probability(confidence, "confidence")
     risk = _check_probability(risk, "risk")
+    _check_probability(confidence_threshold, "confidence_threshold")
+    _check_probability(risk_threshold, "risk_threshold")
     if risk >= risk_threshold:
         return Decision.FLAG
     if confidence < confidence_threshold:
@@ -88,14 +117,19 @@ def decide(
 
 
 def _simplex(probabilities: Sequence[float], size: int, name: str) -> tuple[float, ...]:
-    values = tuple(float(p) for p in probabilities)
-    if len(values) != size:
+    if len(probabilities) != size:
         raise ValueError(f"{name} must contain {size} probabilities")
-    if any(not math.isfinite(p) or p < 0 or p > 1 for p in values):
-        raise ValueError(f"{name} must be finite probabilities")
+    values: list[float] = []
+    for p in probabilities:
+        if isinstance(p, bool) or not isinstance(p, (int, float)):
+            raise ValueError(f"{name} must be finite probabilities")
+        fp = float(p)
+        if not math.isfinite(fp) or fp < 0.0 or fp > 1.0:
+            raise ValueError(f"{name} must be finite probabilities")
+        values.append(fp)
     if abs(sum(values) - 1.0) > 1e-4:
         raise ValueError(f"{name} must sum to one")
-    return values
+    return tuple(values)
 
 
 def progress_feedback(
@@ -175,7 +209,11 @@ def evaluate_decisions(
     normalised = [
         d.value if isinstance(d, Decision) else str(d) for d in decisions
     ]
-    invalid = set(normalised) - {Decision.ACCEPT.value, Decision.FLAG.value, Decision.REVIEW.value}
+    invalid = set(normalised) - {
+        Decision.ACCEPT.value,
+        Decision.FLAG.value,
+        Decision.REVIEW.value,
+    }
     if invalid:
         raise ValueError(f"unknown decision value(s): {sorted(invalid)}")
 
@@ -184,6 +222,7 @@ def evaluate_decisions(
     reviewed = [i for i, d in enumerate(normalised) if d == Decision.REVIEW.value]
 
     correct = sum(1 for i in accepted if predictions[i] == labels[i])
+    accept_errors = len(accepted) - correct
     overall_errors = [i for i in range(len(labels)) if predictions[i] != labels[i]]
     errors_in_flagged = [i for i in flagged if predictions[i] != labels[i]]
     errors_in_reviewed = [i for i in reviewed if predictions[i] != labels[i]]
@@ -199,7 +238,8 @@ def evaluate_decisions(
         "review": len(reviewed),
         "coverage": len(accepted) / n,
         "accept_accuracy": correct / len(accepted) if accepted else None,
-        "accept_errors": len(accepted) - correct,
+        "accept_errors": accept_errors,
+        "accepted_error_rate": accept_errors / len(accepted) if accepted else None,
         "overall_errors": len(overall_errors),
         "errors_in_flagged": len(errors_in_flagged),
         "errors_in_reviewed": len(errors_in_reviewed),
@@ -297,26 +337,44 @@ def oracle_review_curve(
 
 
 # ---------------------------------------------------------------------------
-# Calibration
+# Calibration and Brier / ROC-AUC diagnostics
 # ---------------------------------------------------------------------------
 
 
 def _softmax(logits: Sequence[float]) -> list[float]:
     if not logits:
         raise ValueError("empty logits")
-    if any(not math.isfinite(v) for v in logits):
-        raise ValueError("non-finite logits")
-    peak = max(logits)
-    exps = [math.exp(v - peak) for v in logits]
+    clean: list[float] = []
+    for v in logits:
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(float(v)):
+            raise ValueError("non-finite logits")
+        clean.append(float(v))
+    peak = max(clean)
+    exps = [math.exp(v - peak) for v in clean]
     total = sum(exps)
     return [v / total for v in exps]
 
 
+def _sigmoid(z: float) -> float:
+    if z >= 0.0:
+        return 1.0 / (1.0 + math.exp(-z))
+    ez = math.exp(z)
+    return ez / (1.0 + ez)
+
+
+def _logit_prob(prob: float) -> float:
+    p = _check_probability(prob, "score")
+    return math.log(max(p, _LOG_EPS)) - math.log(max(1.0 - p, _LOG_EPS))
+
+
 def apply_temperature(logits: Sequence[float], temperature: float) -> list[float]:
     """Temperature-scale a logit vector. ``temperature == 1`` is identity."""
-    if not math.isfinite(temperature) or temperature <= 0:
+    if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
         raise ValueError("temperature must be positive")
-    return _softmax([v / temperature for v in logits])
+    temp = float(temperature)
+    if not math.isfinite(temp) or temp <= 0.0:
+        raise ValueError("temperature must be positive")
+    return _softmax([float(v) / temp for v in logits])
 
 
 def negative_log_likelihood(
@@ -332,9 +390,9 @@ def negative_log_likelihood(
     total = 0.0
     for row, label in zip(logits, labels):
         probabilities = apply_temperature(row, temperature)
-        if not 0 <= label < len(probabilities):
+        if isinstance(label, bool) or not isinstance(label, int) or not 0 <= label < len(probabilities):
             raise ValueError("label out of range")
-        total -= math.log(max(probabilities[label], 1e-12))
+        total -= math.log(max(probabilities[label], _LOG_EPS))
     return total / len(logits)
 
 
@@ -349,13 +407,13 @@ def fit_temperature(
     """Fit a single temperature by golden-section search on NLL.
 
     One scalar cannot fix a systematically overconfident model, but it is a
-    cheap, monotone calibration baseline and a useful diagnostic. Report the
-    NLL before and after; never report accuracy as if calibration changed it -
-    temperature scaling does not change argmax.
+    cheap, monotone within-row calibration baseline and a useful diagnostic.
+    Report the NLL before and after; never report accuracy as if calibration
+    changed it - temperature scaling preserves single-sample argmax.
     """
     if len(logits) != len(labels) or not logits:
         raise ValueError("logits and labels must be non-empty and aligned")
-    if not 0 < lower < upper:
+    if not 0.0 < lower < upper:
         raise ValueError("invalid search interval")
 
     ratio = (math.sqrt(5.0) - 1.0) / 2.0
@@ -381,6 +439,292 @@ def fit_temperature(
         "temperature": best,
         "nll_before": negative_log_likelihood(logits, labels, 1.0),
         "nll_after": negative_log_likelihood(logits, labels, best),
+    }
+
+
+def brier_multiclass(
+    probabilities: Sequence[Sequence[float]],
+    labels: Sequence[int],
+) -> float:
+    """Mean multiclass Brier score ``(1/N) sum_i sum_k (p_{i,k} - y_{i,k})^2``."""
+    if len(probabilities) != len(labels):
+        raise ValueError("probabilities and labels must have equal length")
+    if not probabilities:
+        raise ValueError("empty evaluation set")
+    num_classes = len(probabilities[0])
+    if num_classes < 2:
+        raise ValueError("multiclass Brier requires at least two classes")
+
+    total = 0.0
+    for row, label in zip(probabilities, labels):
+        vals = _simplex(row, num_classes, "probabilities")
+        if isinstance(label, bool) or not isinstance(label, int) or not 0 <= label < num_classes:
+            raise ValueError(f"label out of range: {label!r}")
+        total += sum((pi - (1.0 if idx == label else 0.0)) ** 2 for idx, pi in enumerate(vals))
+    return total / len(labels)
+
+
+def brier_binary(
+    probabilities: Sequence[float],
+    labels: Sequence[int | bool],
+) -> float:
+    """Mean binary Brier score ``(1/N) sum_i (p_i - y_i)^2``."""
+    if len(probabilities) != len(labels):
+        raise ValueError("probabilities and labels must have equal length")
+    if not probabilities:
+        raise ValueError("empty evaluation set")
+
+    total = 0.0
+    for prob, label in zip(probabilities, labels):
+        p = _check_probability(prob, "probability")
+        y = float(_check_binary_label(label))
+        total += (p - y) ** 2
+    return total / len(labels)
+
+
+def binary_platt(
+    scores: Sequence[float],
+    labels: Sequence[int | bool],
+    iters: int = 400,
+    lr: float = 0.5,
+    l2: float = 1e-3,
+) -> tuple[float, float]:
+    """Fit 1D binary Platt scaling ``P(y=1) = sigmoid(a * logit(s) + b)``.
+
+    Uses deterministic pure-stdlib batch gradient descent with weak L2
+    regularisation on the slope ``a``. Whenever ``a > 0``, ``apply_binary_platt``
+    is strictly monotone in ``s`` on ``(0, 1)`` and preserves ROC-AUC ranking.
+
+    Returns:
+        ``(a, b)`` slope and intercept in logit space.
+    """
+    if len(scores) != len(labels):
+        raise ValueError("scores and labels must have equal length")
+    if not scores:
+        raise ValueError("empty calibration set")
+    if isinstance(iters, bool) or not isinstance(iters, int) or iters < 1:
+        raise ValueError("iters must be a positive integer")
+    if isinstance(lr, bool) or not isinstance(lr, (int, float)) or not math.isfinite(lr) or lr <= 0.0:
+        raise ValueError("lr must be positive")
+    if isinstance(l2, bool) or not isinstance(l2, (int, float)) or not math.isfinite(l2) or l2 < 0.0:
+        raise ValueError("l2 must be non-negative")
+
+    x = [_logit_prob(s) for s in scores]
+    y = [float(_check_binary_label(lbl)) for lbl in labels]
+    a, b = 1.0, 0.0
+    step = float(lr)
+    reg = float(l2)
+    n = len(y)
+    for _ in range(iters):
+        ga = 0.0
+        gb = 0.0
+        for xi, yi in zip(x, y):
+            p = _sigmoid(a * xi + b)
+            diff = p - yi
+            ga += diff * xi
+            gb += diff
+        ga = ga / n + reg * a
+        gb = gb / n
+        a -= step * ga
+        b -= step * gb
+        step *= 0.995
+    return a, b
+
+
+def apply_binary_platt(
+    scores: Sequence[float],
+    a: float,
+    b: float,
+) -> list[float]:
+    """Apply fitted Platt parameters ``(a, b)`` to binary probability scores."""
+    if (
+        isinstance(a, bool)
+        or isinstance(b, bool)
+        or not isinstance(a, (int, float))
+        or not isinstance(b, (int, float))
+    ):
+        raise ValueError("Platt parameters a and b must be finite numbers")
+    fa, fb = float(a), float(b)
+    if not (math.isfinite(fa) and math.isfinite(fb)):
+        raise ValueError("Platt parameters a and b must be finite numbers")
+    return [_sigmoid(fa * _logit_prob(s) + fb) for s in scores]
+
+
+def roc_auc(
+    scores: Sequence[float],
+    binary_labels: Sequence[int | bool],
+) -> float:
+    """Exact tie-aware Mann-Whitney midrank ROC-AUC for binary targets."""
+    if len(scores) != len(binary_labels):
+        raise ValueError("scores and binary_labels must have equal length")
+    if not scores:
+        raise ValueError("empty evaluation set")
+
+    pos: list[float] = []
+    neg: list[float] = []
+    for s, lbl in zip(scores, binary_labels):
+        if isinstance(s, bool) or not isinstance(s, (int, float)) or not math.isfinite(float(s)):
+            raise ValueError(f"non-finite score: {s!r}")
+        y = _check_binary_label(lbl, "binary_label")
+        if y == 1:
+            pos.append(float(s))
+        else:
+            neg.append(float(s))
+
+    if not pos or not neg:
+        raise ValueError("roc_auc requires at least one positive and one negative sample")
+
+    paired = sorted([(v, 1) for v in pos] + [(v, 0) for v in neg])
+    rank_sum = 0.0
+    i = 0
+    while i < len(paired):
+        j = i + 1
+        while j < len(paired) and paired[j][0] == paired[i][0]:
+            j += 1
+        mid_rank = (i + 1 + j) / 2.0
+        rank_sum += sum(flag for _, flag in paired[i:j]) * mid_rank
+        i = j
+    return (rank_sum - len(pos) * (len(pos) + 1) / 2.0) / (len(pos) * len(neg))
+
+
+def audit_temperature_vs_platt_auc(
+    logits: Sequence[Sequence[float]],
+    labels: Sequence[int] | None = None,
+    *,
+    binary_labels: Sequence[int | bool] | None = None,
+    temperature: float | None = None,
+    platt_params: tuple[float, float] | None = None,
+    risk_index: int = 0,
+    fit_logits: Sequence[Sequence[float]] | None = None,
+    fit_labels: Sequence[int] | None = None,
+    tol: float = 1e-12,
+) -> dict[str, object]:
+    """Audit how multiclass Temperature Scaling vs binary Platt affect ``p1`` ROC-AUC.
+
+    Within each sample, dividing logits by ``T > 0`` is strictly monotone, so
+    ``argmax`` is invariant. Across samples, however,
+    ``p1(T) = 1 / (1 + sum_{k != 0} exp((z_k - z_0) / T))`` depends on how
+    non-target logit mass is concentrated vs spread across classes ``2..K``.
+    Two samples can therefore reverse their ``p1`` rank order when ``T != 1``,
+    shifting cross-sample ``p1`` ROC-AUC. Positive-slope (``a > 0``) binary
+    Platt scaling ``sigmoid(a * logit(p1) + b)`` transforms ``p1`` alone by a
+    strictly increasing function and preserves cross-sample ``p1`` ranking.
+
+    Args:
+        logits: ``[N, K]`` raw multiclass logits evaluated by the audit.
+        labels: optional ``[N]`` multiclass gold indices ``0..K-1`` (class
+            ``risk_index`` is positive when ``binary_labels`` is omitted).
+        binary_labels: optional explicit ``{0, 1}`` target indicators for class
+            ``risk_index``. Overrides ``labels == risk_index`` for binary metrics.
+        temperature: explicit positive scalar ``T``. When ``None``, fitted via
+            :func:`fit_temperature` on ``(fit_logits or logits, fit_labels or labels)``.
+        platt_params: optional ``(a, b)`` tuple. When ``None``, fitted via
+            :func:`binary_platt` on ``fit_logits``/``fit_labels`` if supplied,
+            otherwise on ``(raw_p1, binary_targets)``.
+        risk_index: class index corresponding to ``p1`` (default ``0``).
+        fit_logits: optional separate fit-split logits for leak-free fitting.
+        fit_labels: optional separate fit-split multiclass labels.
+        tol: numerical tolerance for ROC-AUC equality checks.
+    """
+    if not logits:
+        raise ValueError("empty logits")
+    num_classes = len(logits[0])
+    if num_classes < 2:
+        raise ValueError("logits must have at least two classes")
+    if isinstance(risk_index, bool) or not isinstance(risk_index, int) or not 0 <= risk_index < num_classes:
+        raise ValueError("risk_index out of range")
+
+    clean_logits: list[list[float]] = []
+    for row in logits:
+        if len(row) != num_classes:
+            raise ValueError("all logit rows must have identical class count")
+        clean_row: list[float] = []
+        for v in row:
+            if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(float(v)):
+                raise ValueError("non-finite logits")
+            clean_row.append(float(v))
+        clean_logits.append(clean_row)
+
+    if labels is not None:
+        if len(labels) != len(clean_logits):
+            raise ValueError("logits and labels must have equal length")
+        for lbl in labels:
+            if isinstance(lbl, bool) or not isinstance(lbl, int) or not 0 <= lbl < num_classes:
+                raise ValueError("label out of range")
+
+    if binary_labels is not None:
+        if len(binary_labels) != len(clean_logits):
+            raise ValueError("logits and binary_labels must have equal length")
+        eval_binary = [_check_binary_label(lbl, "binary_label") for lbl in binary_labels]
+    elif labels is not None:
+        eval_binary = [1 if lbl == risk_index else 0 for lbl in labels]
+    else:
+        raise ValueError("either labels or binary_labels must be provided")
+
+    if temperature is not None:
+        if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
+            raise ValueError("temperature must be positive")
+        temp_used = float(temperature)
+        if not math.isfinite(temp_used) or temp_used <= 0.0:
+            raise ValueError("temperature must be positive")
+    else:
+        src_logits = fit_logits if fit_logits is not None else clean_logits
+        src_labels = fit_labels if fit_labels is not None else labels
+        if src_labels is None:
+            raise ValueError("temperature must be provided when multiclass labels are omitted")
+        temp_used = fit_temperature(src_logits, src_labels)["temperature"]
+
+    raw_probs = [apply_temperature(row, 1.0) for row in clean_logits]
+    ts_probs = [apply_temperature(row, temp_used) for row in clean_logits]
+
+    raw_argmax = [max(range(num_classes), key=row.__getitem__) for row in clean_logits]
+    ts_argmax = [max(range(num_classes), key=probs.__getitem__) for probs in ts_probs]
+    argmax_preserved = raw_argmax == ts_argmax
+
+    raw_p1 = [probs[risk_index] for probs in raw_probs]
+    ts_p1 = [probs[risk_index] for probs in ts_probs]
+
+    if platt_params is not None:
+        platt_a, platt_b = float(platt_params[0]), float(platt_params[1])
+    elif fit_logits is not None and fit_labels is not None:
+        fit_raw_p1 = [apply_temperature(row, 1.0)[risk_index] for row in fit_logits]
+        fit_bin = [1 if lbl == risk_index else 0 for lbl in fit_labels]
+        platt_a, platt_b = binary_platt(fit_raw_p1, fit_bin)
+    else:
+        platt_a, platt_b = binary_platt(raw_p1, eval_binary)
+
+    platt_p1 = apply_binary_platt(raw_p1, platt_a, platt_b)
+
+    raw_auc_val = roc_auc(raw_p1, eval_binary)
+    ts_auc_val = roc_auc(ts_p1, eval_binary)
+    platt_auc_val = roc_auc(platt_p1, eval_binary)
+
+    pair_inversions = 0
+    for i in range(len(raw_p1)):
+        for j in range(i + 1, len(raw_p1)):
+            if (raw_p1[i] - raw_p1[j]) * (ts_p1[i] - ts_p1[j]) < 0.0:
+                pair_inversions += 1
+
+    return {
+        "n": len(clean_logits),
+        "risk_index": risk_index,
+        "temperature": temp_used,
+        "platt_a": platt_a,
+        "platt_b": platt_b,
+        "raw_p1": raw_p1,
+        "ts_p1": ts_p1,
+        "platt_p1": platt_p1,
+        "raw_roc_auc": raw_auc_val,
+        "ts_roc_auc": ts_auc_val,
+        "platt_roc_auc": platt_auc_val,
+        "ts_auc_delta": ts_auc_val - raw_auc_val,
+        "platt_auc_delta": platt_auc_val - raw_auc_val,
+        "argmax_preserved": argmax_preserved,
+        "ts_auc_changed": abs(ts_auc_val - raw_auc_val) > tol,
+        "ts_pair_inversions": pair_inversions,
+        "platt_order_preserving": (
+            platt_a > 0.0 and abs(platt_auc_val - raw_auc_val) <= tol
+        ),
     }
 
 
