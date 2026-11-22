@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gui-transition-verifier"
-version = "0.1.0"
-description = "Multimodal state-transition safety verification, native tool-use protocol alignment, single-token ABCD process reward modeling, and Conv3d-free operator acceleration for GUI agents."
+version = "0.2.0"
+description = "Multimodal GUI policy post-training, cross-domain semantic transition verification, native tool-use protocol alignment, process reward modeling, and Conv3d-free operator acceleration."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -40,6 +40,7 @@ include = [
     "eval*",
     "training*",
     "prm*",
+    "policy*",
 ]
 
 [tool.pytest.ini_options]

@@ -1,0 +1,104 @@
+{
+  "patch_embed_equivalence": {
+    "patch_embed_tensor_equiv": {
+      "n_samples": 16,
+      "mean_abs": 0.0,
+      "p95_abs": 0.0,
+      "p99_abs": 0.0,
+      "max_abs": 0.007812,
+      "mean_rel_l2": 3.8e-05,
+      "native_pe_ms_mean": 13516.68,
+      "linear_pe_ms_mean": 2.46
+    },
+    "lora_gradient_equiv": {
+      "n_grad_tensors": 504,
+      "loss_native": 0.36208,
+      "loss_linear": 0.36823,
+      "loss_abs_diff": 0.00615,
+      "global_grad_cos_sim": 0.976824,
+      "min_tensor_cos_sim": 0.7730565,
+      "native_fwd_bwd_s": 32.909,
+      "linear_fwd_bwd_s": 5.726,
+      "e2e_train_microbatch_speedup": 5.75
+    },
+    "greedy_inference_parity_20samples": {
+      "n_samples": 20,
+      "exact_raw_match": 18,
+      "exact_parsed_action_match": 18,
+      "action_type_match": 20,
+      "coord_l2_1000grid_max": 33.0,
+      "coord_l2_1000grid_mean": 5.116,
+      "native_mean_s": 6.638,
+      "linear_mean_s": 3.005,
+      "e2e_inference_speedup": 2.21,
+      "native_20_total_s": 132.75,
+      "linear_20_total_s": 60.1
+    }
+  },
+  "v4_recalibration_offline_1000grid": {
+    "unit_note": "Normalized [0, 1000] x [0, 1000] Qwen3-VL integer grid Euclidean distance (max possible = 1414.21)",
+    "m1_intersect_m2_openapps_clicks": {
+      "m1_expert_only": {
+        "n": 139,
+        "mean": 37.17,
+        "median": 13.6,
+        "p90": 39.32
+      },
+      "m2_mixed_equal_budget": {
+        "n": 139,
+        "mean": 74.2,
+        "median": 12.0,
+        "p90": 170.36
+      }
+    },
+    "m0_m1_m2_openapps_clicks": {
+      "m0_zeroshot": {
+        "n": 105,
+        "mean": 197.23,
+        "median": 98.0,
+        "p90": 615.75
+      },
+      "m1_expert_only": {
+        "n": 105,
+        "mean": 45.0,
+        "median": 16.0,
+        "p90": 42.0
+      },
+      "m2_mixed_equal_budget": {
+        "n": 105,
+        "mean": 95.97,
+        "median": 14.32,
+        "p90": 672.01
+      }
+    }
+  },
+  "v4_online_process_discipline": {
+    "m0_zeroshot": {
+      "episodes": 19,
+      "total_clicks": 123,
+      "noop_clicks": 36,
+      "noop_click_rate": 0.2927,
+      "unfocused_type_events": 12,
+      "form_abandon_events": 0,
+      "dup_create_event_types": 4
+    },
+    "m1_expert_only": {
+      "episodes": 19,
+      "total_clicks": 243,
+      "noop_clicks": 2,
+      "noop_click_rate": 0.0082,
+      "unfocused_type_events": 0,
+      "form_abandon_events": 0,
+      "dup_create_event_types": 1
+    },
+    "m2_mixed_equal_budget": {
+      "episodes": 19,
+      "total_clicks": 270,
+      "noop_clicks": 1,
+      "noop_click_rate": 0.0037,
+      "unfocused_type_events": 0,
+      "form_abandon_events": 4,
+      "dup_create_event_types": 2
+    }
+  }
+}

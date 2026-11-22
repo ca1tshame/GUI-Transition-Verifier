@@ -1,0 +1,1362 @@
+{
+  "benchmark": "OpenApps frozen Dev split (19 composite tasks, 55 official subtasks, dark/desktop 1024x576, seed=911, max_steps=25)",
+  "task_names_withheld": true,
+  "anonymization_note": "Deterministic task-order permutation applied to remove alphabetical ordering; pragmatic anonymization rather than a formal privacy guarantee.",
+  "selected_best_policy": "dev_m3_ep2",
+  "runs": {
+    "m0_zeroshot_v4": {
+      "reported": {
+        "n_tasks": 19,
+        "n_success": 0,
+        "success_rate": 0.0,
+        "success_wilson_95_ci": [
+          0.0,
+          0.1682
+        ],
+        "subtasks_passed": 0,
+        "subtasks_total": 55,
+        "micro_subtask_rate": 0.0,
+        "macro_subtask_rate": 0.0,
+        "mean_steps": 7.74,
+        "total_steps": 147,
+        "total_invalid_actions": 3,
+        "total_repeat_events": 44,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 1270.99,
+        "offline_dev_openapps380_nll": null,
+        "note": "Legacy V4 baseline with heuristic subtask count retained for historical parity."
+      },
+      "anonymized_tasks": [
+        {
+          "task_ref": "dev_01",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_02",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_03",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_04",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_05",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_06",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_07",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_08",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_09",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_10",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_11",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_12",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_13",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_14",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_15",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_16",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_17",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_18",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_19",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        }
+      ]
+    },
+    "dev_m1_ep1": {
+      "reported": {
+        "n_tasks": 19,
+        "n_success": 2,
+        "success_rate": 0.1053,
+        "success_wilson_95_ci": [
+          0.0294,
+          0.3139
+        ],
+        "subtasks_passed": 17,
+        "subtasks_total": 55,
+        "micro_subtask_rate": 0.3091,
+        "macro_subtask_rate": 0.3158,
+        "mean_steps": 22.68,
+        "total_steps": 431,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 3,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 2184.77,
+        "offline_dev_openapps380_nll": 0.16664
+      },
+      "anonymized_tasks": [
+        {
+          "task_ref": "dev_01",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_02",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_03",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_04",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_05",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_06",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_07",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_08",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_09",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_10",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_11",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_12",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_13",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_14",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_15",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_16",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_17",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_18",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_19",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        }
+      ]
+    },
+    "dev_m2_ep1": {
+      "reported": {
+        "n_tasks": 19,
+        "n_success": 8,
+        "success_rate": 0.4211,
+        "success_wilson_95_ci": [
+          0.2314,
+          0.6372
+        ],
+        "subtasks_passed": 30,
+        "subtasks_total": 55,
+        "micro_subtask_rate": 0.5455,
+        "macro_subtask_rate": 0.5439,
+        "mean_steps": 19.53,
+        "total_steps": 371,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 21,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 2008.66,
+        "offline_dev_openapps380_nll": 0.15424
+      },
+      "anonymized_tasks": [
+        {
+          "task_ref": "dev_01",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_02",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_03",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_04",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_05",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_06",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_07",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_08",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_09",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_10",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_11",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_12",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_13",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_14",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_15",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_16",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_17",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_18",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_19",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        }
+      ]
+    },
+    "dev_m1_ep2": {
+      "reported": {
+        "n_tasks": 19,
+        "n_success": 9,
+        "success_rate": 0.4737,
+        "success_wilson_95_ci": [
+          0.2733,
+          0.6829
+        ],
+        "subtasks_passed": 34,
+        "subtasks_total": 55,
+        "micro_subtask_rate": 0.6182,
+        "macro_subtask_rate": 0.6184,
+        "mean_steps": 20.84,
+        "total_steps": 396,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 0,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 2016.95,
+        "offline_dev_openapps380_nll": 0.21898
+      },
+      "anonymized_tasks": [
+        {
+          "task_ref": "dev_01",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_02",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_03",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_04",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_05",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_06",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_07",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_08",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_09",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_10",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_11",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_12",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_13",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_14",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_15",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_16",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_17",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_18",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_19",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        }
+      ]
+    },
+    "m2_ep2_v4": {
+      "reported": {
+        "n_tasks": 19,
+        "n_success": 3,
+        "success_rate": 0.1579,
+        "success_wilson_95_ci": [
+          0.0552,
+          0.3757
+        ],
+        "subtasks_passed": 37,
+        "subtasks_total": 55,
+        "micro_subtask_rate": 0.6727,
+        "macro_subtask_rate": 0.6754,
+        "mean_steps": 21.89,
+        "total_steps": 416,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 12,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 3669.54,
+        "offline_dev_openapps380_nll": 0.19614,
+        "note": "Legacy V4 baseline with heuristic subtask count retained for historical parity."
+      },
+      "anonymized_tasks": [
+        {
+          "task_ref": "dev_01",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_02",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_03",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_04",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_05",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_06",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_07",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_08",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_09",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_10",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_11",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_12",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_13",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_14",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_15",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_16",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_17",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_18",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_19",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        }
+      ]
+    },
+    "dev_m3_ep1": {
+      "reported": {
+        "n_tasks": 19,
+        "n_success": 8,
+        "success_rate": 0.4211,
+        "success_wilson_95_ci": [
+          0.2314,
+          0.6372
+        ],
+        "subtasks_passed": 32,
+        "subtasks_total": 55,
+        "micro_subtask_rate": 0.5818,
+        "macro_subtask_rate": 0.6097,
+        "mean_steps": 22.0,
+        "total_steps": 418,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 2,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 2192.37,
+        "offline_dev_openapps380_nll": 0.02739
+      },
+      "anonymized_tasks": [
+        {
+          "task_ref": "dev_01",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_02",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_03",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_04",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_05",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_06",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_07",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_08",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_09",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_10",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_11",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_12",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_13",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_14",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_15",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_16",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_17",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_18",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_19",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        }
+      ]
+    },
+    "dev_m3_ep2": {
+      "reported": {
+        "n_tasks": 19,
+        "n_success": 10,
+        "success_rate": 0.5263,
+        "success_wilson_95_ci": [
+          0.3171,
+          0.7267
+        ],
+        "subtasks_passed": 37,
+        "subtasks_total": 55,
+        "micro_subtask_rate": 0.6727,
+        "macro_subtask_rate": 0.7193,
+        "mean_steps": 20.63,
+        "total_steps": 392,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 2,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 2067.79,
+        "offline_dev_openapps380_nll": 0.03287
+      },
+      "anonymized_tasks": [
+        {
+          "task_ref": "dev_01",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_02",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_03",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_04",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_05",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_06",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_07",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_08",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_09",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_10",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_11",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_12",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_13",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_14",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_15",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_16",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_17",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_18",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_19",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        }
+      ]
+    },
+    "dev_arm_b_rules": {
+      "reported": {
+        "n_tasks": 19,
+        "n_success": 10,
+        "success_rate": 0.5263,
+        "success_wilson_95_ci": [
+          0.3171,
+          0.7267
+        ],
+        "subtasks_passed": 37,
+        "subtasks_total": 55,
+        "micro_subtask_rate": 0.6727,
+        "macro_subtask_rate": 0.7193,
+        "mean_steps": 20.68,
+        "total_steps": 393,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 3,
+        "total_rule_interventions": 2,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 2077.6,
+        "offline_dev_openapps380_nll": null
+      },
+      "anonymized_tasks": [
+        {
+          "task_ref": "dev_01",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_02",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_03",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_04",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_05",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_06",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_07",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_08",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_09",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_10",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_11",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_12",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_13",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_14",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_15",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_16",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_17",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_18",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_19",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        }
+      ]
+    },
+    "dev_arm_c_verifier": {
+      "reported": {
+        "n_tasks": 19,
+        "n_success": 10,
+        "success_rate": 0.5263,
+        "success_wilson_95_ci": [
+          0.3171,
+          0.7267
+        ],
+        "subtasks_passed": 37,
+        "subtasks_total": 55,
+        "micro_subtask_rate": 0.6727,
+        "macro_subtask_rate": 0.7193,
+        "mean_steps": 20.68,
+        "total_steps": 393,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 3,
+        "total_rule_interventions": 2,
+        "total_verifier_calls": 383,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 2262.14,
+        "offline_dev_openapps380_nll": null
+      },
+      "anonymized_tasks": [
+        {
+          "task_ref": "dev_01",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 3,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_02",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_03",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_04",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_05",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_06",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 0,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_07",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_08",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 4
+        },
+        {
+          "task_ref": "dev_09",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_10",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_11",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_12",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 2,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_13",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_14",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_15",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_16",
+          "oracle_terminal_success": false,
+          "subtasks_passed": 1,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_17",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 2,
+          "subtasks_total": 2
+        },
+        {
+          "task_ref": "dev_18",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        },
+        {
+          "task_ref": "dev_19",
+          "oracle_terminal_success": true,
+          "subtasks_passed": 3,
+          "subtasks_total": 3
+        }
+      ]
+    }
+  },
+  "paired_comparisons": {
+    "dev_m1_ep1_vs_m0": {
+      "arm_a": "m0_zeroshot_v4",
+      "arm_b": "dev_m1_ep1",
+      "n_wins": 2,
+      "n_losses": 0,
+      "n_both_pass": 0,
+      "n_both_fail": 17,
+      "exact_mcnemar_two_sided_p": 0.5
+    },
+    "dev_m1_ep2_vs_m0": {
+      "arm_a": "m0_zeroshot_v4",
+      "arm_b": "dev_m1_ep2",
+      "n_wins": 9,
+      "n_losses": 0,
+      "n_both_pass": 0,
+      "n_both_fail": 10,
+      "exact_mcnemar_two_sided_p": 0.003906
+    },
+    "dev_m2_ep1_vs_m0": {
+      "arm_a": "m0_zeroshot_v4",
+      "arm_b": "dev_m2_ep1",
+      "n_wins": 8,
+      "n_losses": 0,
+      "n_both_pass": 0,
+      "n_both_fail": 11,
+      "exact_mcnemar_two_sided_p": 0.007812
+    },
+    "dev_m3_ep1_vs_m0": {
+      "arm_a": "m0_zeroshot_v4",
+      "arm_b": "dev_m3_ep1",
+      "n_wins": 8,
+      "n_losses": 0,
+      "n_both_pass": 0,
+      "n_both_fail": 11,
+      "exact_mcnemar_two_sided_p": 0.007812
+    },
+    "dev_m3_ep2_vs_m0": {
+      "arm_a": "m0_zeroshot_v4",
+      "arm_b": "dev_m3_ep2",
+      "n_wins": 10,
+      "n_losses": 0,
+      "n_both_pass": 0,
+      "n_both_fail": 9,
+      "exact_mcnemar_two_sided_p": 0.001953
+    },
+    "dev_m1_ep1_vs_m1_ep2": {
+      "arm_a": "dev_m1_ep2",
+      "arm_b": "dev_m1_ep1",
+      "n_wins": 0,
+      "n_losses": 7,
+      "n_both_pass": 2,
+      "n_both_fail": 10,
+      "exact_mcnemar_two_sided_p": 0.015625
+    },
+    "dev_m2_ep2_vs_m2_ep1": {
+      "arm_a": "dev_m2_ep1",
+      "arm_b": "m2_ep2_v4",
+      "n_wins": 0,
+      "n_losses": 5,
+      "n_both_pass": 3,
+      "n_both_fail": 11,
+      "exact_mcnemar_two_sided_p": 0.0625
+    },
+    "dev_m3_ep2_vs_m1_ep2": {
+      "arm_a": "dev_m1_ep2",
+      "arm_b": "dev_m3_ep2",
+      "n_wins": 2,
+      "n_losses": 1,
+      "n_both_pass": 8,
+      "n_both_fail": 8,
+      "exact_mcnemar_two_sided_p": 1.0
+    },
+    "dev_arm_b_vs_arm_a": {
+      "arm_a": "dev_m3_ep2",
+      "arm_b": "dev_arm_b_rules",
+      "n_wins": 0,
+      "n_losses": 0,
+      "n_both_pass": 10,
+      "n_both_fail": 9,
+      "exact_mcnemar_two_sided_p": 1.0
+    },
+    "dev_arm_c_vs_arm_a": {
+      "arm_a": "dev_m3_ep2",
+      "arm_b": "dev_arm_c_verifier",
+      "n_wins": 0,
+      "n_losses": 0,
+      "n_both_pass": 10,
+      "n_both_fail": 9,
+      "exact_mcnemar_two_sided_p": 1.0
+    }
+  }
+}

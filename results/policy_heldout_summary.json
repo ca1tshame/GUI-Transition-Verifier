@@ -1,0 +1,139 @@
+{
+  "benchmark": "One-shot frozen OpenApps Heldout split (12 composite tasks across 6 components, 36 official subtasks, dark/desktop 1024x576, seed=915, zero tuning)",
+  "task_names_withheld": true,
+  "per_task_vectors_withheld": true,
+  "isolation_note": "Per-task vectors and subtask counts are withheld to prevent combinatorial re-identification on the one-shot Heldout split; aggregate counts and paired 2x2 contingency tables are published for exact Wilson CI and McNemar recomputation.",
+  "runs": {
+    "heldout_m0": {
+      "reported": {
+        "n_tasks": 12,
+        "n_success": 0,
+        "success_rate": 0.0,
+        "success_wilson_95_ci": [
+          0.0,
+          0.2425
+        ],
+        "subtasks_passed": 1,
+        "subtasks_total": 36,
+        "micro_subtask_rate": 0.0278,
+        "macro_subtask_rate": 0.0417,
+        "mean_steps": 7.67,
+        "total_steps": 92,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 22,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 480.44
+      }
+    },
+    "heldout_arm_a": {
+      "reported": {
+        "n_tasks": 12,
+        "n_success": 7,
+        "success_rate": 0.5833,
+        "success_wilson_95_ci": [
+          0.3195,
+          0.8067
+        ],
+        "subtasks_passed": 27,
+        "subtasks_total": 36,
+        "micro_subtask_rate": 0.75,
+        "macro_subtask_rate": 0.7917,
+        "mean_steps": 21.42,
+        "total_steps": 257,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 3,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 1338.36
+      }
+    },
+    "heldout_arm_b": {
+      "reported": {
+        "n_tasks": 12,
+        "n_success": 7,
+        "success_rate": 0.5833,
+        "success_wilson_95_ci": [
+          0.3195,
+          0.8067
+        ],
+        "subtasks_passed": 27,
+        "subtasks_total": 36,
+        "micro_subtask_rate": 0.75,
+        "macro_subtask_rate": 0.7917,
+        "mean_steps": 21.5,
+        "total_steps": 258,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 4,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 0,
+        "total_verifier_interventions": 0,
+        "elapsed_s": 1352.71
+      }
+    },
+    "heldout_arm_c": {
+      "reported": {
+        "n_tasks": 12,
+        "n_success": 6,
+        "success_rate": 0.5,
+        "success_wilson_95_ci": [
+          0.2538,
+          0.7462
+        ],
+        "subtasks_passed": 26,
+        "subtasks_total": 36,
+        "micro_subtask_rate": 0.7222,
+        "macro_subtask_rate": 0.75,
+        "mean_steps": 22.83,
+        "total_steps": 274,
+        "total_invalid_actions": 0,
+        "total_repeat_events": 4,
+        "total_rule_interventions": 0,
+        "total_verifier_calls": 268,
+        "total_verifier_interventions": 1,
+        "elapsed_s": 1556.01
+      }
+    }
+  },
+  "paired_comparisons": {
+    "heldout_arm_a_vs_m0": {
+      "arm_a": "heldout_m0",
+      "arm_b": "heldout_arm_a",
+      "n_wins": 7,
+      "n_losses": 0,
+      "n_both_pass": 0,
+      "n_both_fail": 5,
+      "exact_mcnemar_two_sided_p": 0.015625
+    },
+    "heldout_arm_b_vs_arm_a": {
+      "arm_a": "heldout_arm_a",
+      "arm_b": "heldout_arm_b",
+      "n_wins": 0,
+      "n_losses": 0,
+      "n_both_pass": 7,
+      "n_both_fail": 5,
+      "exact_mcnemar_two_sided_p": 1.0
+    },
+    "heldout_arm_c_vs_arm_b": {
+      "arm_a": "heldout_arm_b",
+      "arm_b": "heldout_arm_c",
+      "n_wins": 0,
+      "n_losses": 1,
+      "n_both_pass": 6,
+      "n_both_fail": 5,
+      "exact_mcnemar_two_sided_p": 1.0
+    },
+    "heldout_arm_c_vs_arm_a": {
+      "arm_a": "heldout_arm_a",
+      "arm_b": "heldout_arm_c",
+      "n_wins": 0,
+      "n_losses": 1,
+      "n_both_pass": 6,
+      "n_both_fail": 5,
+      "exact_mcnemar_two_sided_p": 1.0
+    }
+  },
+  "arm_c_note": "On the single heldout task where Arm A passed and Arm C failed, Verifier intervened 0 times across all 25 steps (variance at dock click step 6 under dual-LoRA execution). Only 1 intervention fired on another failing task (step 18), leaving outcome unchanged."
+}

@@ -45,3 +45,6 @@ jobs:
 
       - name: Run CPU unit test suite
         run: python -B -m pytest -p no:cacheprovider -v
+
+      - name: Recompute and verify V5 results
+        run: python -B -m eval.v5_recompute

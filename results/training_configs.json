@@ -1,0 +1,179 @@
+{
+  "base_model_name": "Qwen/Qwen3-VL-8B-Instruct",
+  "m3_policy_split": {
+    "created_by": "prepare_m3_split_v5.py",
+    "total_rows": 4534,
+    "composition": {
+      "script_privileged_019": 3291,
+      "teacher_visual_019_clean_multistep": 47,
+      "teacher_visual_019_filtered_short_or_1080p": 209,
+      "v5_skill_gap_fill": 1196
+    },
+    "action_dist": {
+      "type": 1173,
+      "left_click": 2213,
+      "scroll": 1092,
+      "key": 56
+    },
+    "gap_subtype_top15": [
+      [
+        "scroll_down",
+        352
+      ],
+      [
+        "click_button:calendar_month_nav_button",
+        140
+      ],
+      [
+        "nav:/todo",
+        58
+      ],
+      [
+        "nav:/calendar",
+        48
+      ],
+      [
+        "click_literal_target",
+        43
+      ],
+      [
+        "click_button:calendar_add_event_button",
+        38
+      ],
+      [
+        "click_input:calendar_title_input",
+        38
+      ],
+      [
+        "type:calendar_title_input",
+        38
+      ],
+      [
+        "click_input:calendar_date_input",
+        38
+      ],
+      [
+        "type:calendar_date_input",
+        38
+      ],
+      [
+        "click_button:calendar_submit_button",
+        38
+      ],
+      [
+        "click_checkbox",
+        33
+      ],
+      [
+        "nav:/messages",
+        32
+      ],
+      [
+        "click_input:message_input",
+        32
+      ],
+      [
+        "type:message_input",
+        32
+      ]
+    ],
+    "unique_tasks": 163,
+    "unique_parents": 84,
+    "unique_episodes": 607,
+    "dev_overlap_checks": {
+      "task_overlap": 0,
+      "episode_overlap": 0,
+      "image_overlap": 0
+    },
+    "heldout_overlap_checks": {
+      "task_overlap": 0
+    }
+  },
+  "m3_policy_training": {
+    "lora_config": {
+      "r": 16,
+      "lora_alpha": 32,
+      "lora_dropout": 0.05,
+      "target_module_count": 252,
+      "trainable_params": 43646976,
+      "total_params": 8810770672,
+      "trainable_pct": 0.4954,
+      "visual_trainable": false
+    },
+    "hyperparams": {
+      "epochs": 2,
+      "micro_batch_size": 8,
+      "grad_accum": 2,
+      "effective_batch_size": 16,
+      "lr": 0.0001,
+      "weight_decay": 0.01,
+      "warmup_steps": 20,
+      "scheduler": "cosine",
+      "patch_embed_linear_equiv": true,
+      "adamw_fused": true
+    },
+    "optimizer_steps": 568,
+    "cumulative_samples_seen": 9068,
+    "cumulative_input_tokens_seen": 5889666,
+    "cumulative_target_tokens_seen": 331526,
+    "final_train_loss": 0.00194,
+    "dev_evals": [
+      {
+        "dev_openapps_rows": 380,
+        "dev_target_tokens": 14325,
+        "dev_nll_loss": 0.02739,
+        "epoch": 1,
+        "step": 284
+      },
+      {
+        "dev_openapps_rows": 380,
+        "dev_target_tokens": 14325,
+        "dev_nll_loss": 0.03287,
+        "epoch": 2,
+        "step": 568
+      }
+    ],
+    "gpu_seconds": 7416.35,
+    "peak_vram_gb": 29.998
+  },
+  "verifier_dataset": {
+    "onpolicy_episodes": 30,
+    "teacher_episodes": 52,
+    "v_train_count": 713,
+    "v_train_labels": {
+      "A": 441,
+      "B": 183,
+      "C": 78,
+      "D": 11
+    },
+    "v_train_sources": {
+      "teacher_train": 454,
+      "onpolicy_train": 131,
+      "expert_v5_train": 128
+    },
+    "v_val_count": 582,
+    "v_val_labels": {
+      "A": 502,
+      "C": 43,
+      "B": 28,
+      "D": 9
+    },
+    "v_val_sources": {
+      "onpolicy_train": 84,
+      "teacher_train": 164,
+      "expert_v5_train": 334
+    },
+    "dev_heldout_task_overlap": 0,
+    "train_val_parent_overlap": 0,
+    "train_val_image_overlap": 0
+  },
+  "verifier_training": {
+    "best_epoch": 2,
+    "micro_batch_size": 1,
+    "grad_accum": 16,
+    "lr": 0.0001,
+    "epochs": 2,
+    "gpu_seconds": 1837.9,
+    "peak_vram_gb": 17.432
+  }
+}
