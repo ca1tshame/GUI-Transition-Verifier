@@ -1,6 +1,35 @@
-# GUI-Transition-Verifier
+<h1 align="center">GUI-Transition-Verifier</h1>
 
-**Multimodal GUI Policy Learning, Transition Verification, and Process Reward Modeling** built around **Qwen3-VL-8B-Instruct**, unifying real-environment **Policy LoRA post-training**, **zero-leakage cross-domain Semantic Verifier / PRM adaptation**, **fail-closed tool-use alignment and 7-state control**, and **`Conv3d -> F.linear` operator acceleration (`fastPE`)**.
+<p align="center">
+  <b>Multimodal GUI Policy Learning, Cross-Domain Semantic Verification &amp; Operator Acceleration</b><br/>
+  Built around <code>Qwen3-VL-8B-Instruct</code> for closed-loop OpenApps execution, zero-leakage PRM/Verifier adaptation, fail-closed 7-state control, and <code>Conv3d → F.linear</code> acceleration (<code>fastPE</code>).
+</p>
+
+<p align="center">
+  <a href="https://github.com/ca1tshame/GUI-Transition-Verifier/actions/workflows/ci.yml"><img src="https://github.com/ca1tshame/GUI-Transition-Verifier/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
+  <img src="https://img.shields.io/badge/Backbone-Qwen3--VL--8B-blue" alt="Qwen3-VL-8B" />
+  <img src="https://img.shields.io/badge/OpenApps_Heldout-7%2F12_(p%3D0.0156)-indigo" alt="OpenApps Heldout 7/12" />
+  <img src="https://img.shields.io/badge/fastPE-5.75x_Train_%7C_50.8x_Infer-teal" alt="fastPE Speedup" />
+  <img src="https://img.shields.io/badge/CPU_Tests-51_Passing-brightgreen" alt="51 CPU Tests" />
+  <img src="https://img.shields.io/badge/License-Apache--2.0-lightgrey" alt="Apache-2.0" />
+</p>
+
+<p align="center">
+  <a href="#headline-results--honest-scope">Highlights</a> •
+  <a href="#1-architecture--repository-overview">Architecture</a> •
+  <a href="#2-openapps-policy-post-training--closed-loop-evaluation">OpenApps Policy</a> •
+  <a href="#3-cross-domain-semantic-verifier--fastpe-benchmarks">Semantic Verifier &amp; fastPE</a> •
+  <a href="#4-reproducing--verification">Reproducing</a> •
+  <a href="#5-honest-counter-evidence-limitations--licensing">Honest Limits</a>
+</p>
+
+> **At-a-Glance Highlights**
+> - **Closed-Loop Policy LoRA SFT (`policy/`)**: Train-only curated dataset (`4,534` rows, zero Dev/Heldout overlap) lifts `Qwen3-VL-8B` OpenApps Dev from `0/19 →` **`10/19` (`52.63%`, subtasks `37/55`)** and one-shot frozen Heldout from `0/12 →` **`7/12` (`58.33%`, McNemar vs M0 `p=0.015625`)**.
+> - **Cross-Domain Semantic Verifier &amp; Honest Ablation (`policy/`, `prm/`)**: Zero-leakage LoRA (`V-Train 713 / V-Val 582`) cuts Dev-936 true-progress false alarms from `66%–90% →` **`0.14%` (`1/718`)** (`Macro-F1 0.4510`), while 3-arm online evaluation honestly documents **no online task gain (`Arm C`: `10/19` Dev, `6/12` Heldout)** due to low Class-C recall (`7.50%`) and `batch=1` class-weight cancellation.
+> - **Operator &amp; Serving Speedup (`fastpe/`, `training/`)**: Algebraic-equivalent `Conv3d → F.linear` yields **`5.75×`** policy training microbatch speedup (`grad_cos_sim=0.976824`), **`50.8×`** RSWT P50 inference speedup (`7,524.8 → 148.0 ms`), and **`24.12×`** Alert-Safe Cascade speedup with **zero missed `1_hijack` alerts**.
+> - **CPU-Verifiable Claims (`eval/v5_recompute.py`)**: All **`51` CPU unit tests**, repo security audits, Dev-19 / Heldout-12 Wilson CIs &amp; exact McNemar `p`-values, and Dev-936 4×4 confusion matrices verify out-of-the-box in seconds.
+
+*Companion Project: **[MiniMind-O Action](https://github.com/ca1tshame/minimind-o-action)** — explores the complementary lightweight side: pretraining a **63.9M Dense LM from scratch** (`3.61B` tokens) + frozen SigLIP2 (`5/6-Tile Focus Crop`) for resource-constrained BrowserGym / OpenApps execution (`524 ms/step`, `343 MB` VRAM).*
 
 ---
 
@@ -15,9 +44,9 @@
 
 ---
 
-## 1. End-to-End Algorithm Pipeline & Architecture
+## 1. Architecture & Repository Overview
 
-Rather than treating data engineering, policy SFT, process verification, and kernel speedups as separate utilities, the repository connects five stages into a single leakage-isolated workflow:
+Rather than treating data engineering, policy SFT, process verification, and kernel speedups as disconnected scripts, this repository links five leakage-isolated stages end-to-end:
 
 ```mermaid
 flowchart LR
@@ -29,57 +58,73 @@ flowchart LR
     E --> F["Verification & Statistical Audit<br/>eval/v5_recompute.py + diagnostics/ + leak_guard.py"]
 ```
 
-### Repository Layout
+### Package Summary
 
 `policy/` provides a **clean refactored reference implementation** of the V5 training, serving, and closed-loop evaluation pipeline used on the GPU cluster—preserving the core algorithms, loss formulations, and hyperparameters while decoupling private cluster paths and internal capture wrappers.
 
+| Package / Directory | Core Responsibility |
+| --- | --- |
+| [`policy/`](policy/) | Refactored V5 LM-only 252-module LoRA policy SFT, step-level `A/B/C/D` labeler, 4-class Verifier LoRA SFT, single-base dual-LoRA HTTP router, and 3-arm OpenApps evaluator |
+| [`training/`](training/) | Effective-number class weights with `batch=1` fix, unilateral positive margin loss, and cross-term-free rank-concatenated LoRA merging (`adapter_soup`) |
+| [`prm/`](prm/) | Single-token `ABCD` / `AB` last-position logit scoring and fail-closed 7-state idempotent controller with non-idempotent stale guard |
+| [`fastpe/`](fastpe/) | Reversible `Conv3d → F.linear` vision patch projection (`FastPatchEmbed`), two-stage `CascadeRunner`, and latency/numerical parity benchmark CLI |
+| [`protocols/`](protocols/) | Versioned `<tool_call>` schema, fail-closed parser, and single `[0, 1000]^2` coordinate scaling |
+| [`diagnostics/`](diagnostics/) | 144-module per-layer LoRA gradient cosine conflict probe and `accept / flag / review` selective abstention & calibration audits |
+| [`eval/`](eval/) &amp; [`results/`](results/) | 3-layer exact + `dHash+gray32` leakage guard, statistical test suite, anonymized JSON summaries, and `v5_recompute.py` verifier |
+| [`tools/`](tools/) &amp; [`tests/`](tests/) | Pre-publication hygiene scanner (`audit_repo.py`) and 51 CPU unit/regression tests |
+
+<details>
+<summary>Full File-by-File Repository Tree (click to expand)</summary>
+
 ```text
 policy/
-  __init__.py               Public V5 training, labeling, and serving exports
-  collator.py               Qwen3-VL ComputerUse SFT collator (-100 prefix mask) & A/B/C/D prompts
-  step_labeler.py           Objective step-level 4-class labeler (zero episode-outcome copying)
-  train_policy_sft.py       LM-only 252-module LoRA trainer with SHA256/leakage gate & fastPE
-  train_verifier_sft.py     Single-sample M-RoPE-consistent 4-class Verifier LoRA trainer & V-Val tuner
-  dual_lora_router.py       Thread-safe single-base HTTP router switching 'policy' and 'verifier' LoRAs
-  eval_openapps.py          3-arm (policy/rules/verifier) evaluator, per-app CompositeTask check, CDP fallback
+  __init__.py                 Public V5 training, labeling, and serving exports
+  collator.py                 Qwen3-VL ComputerUse SFT collator (-100 prefix mask) & A/B/C/D prompts
+  step_labeler.py             Objective step-level 4-class labeler (zero episode-outcome copying)
+  train_policy_sft.py         LM-only 252-module LoRA trainer with SHA256/leakage gate & fastPE
+  train_verifier_sft.py       Single-sample M-RoPE-consistent 4-class Verifier LoRA trainer & V-Val tuner
+  dual_lora_router.py         Thread-safe single-base HTTP router switching 'policy' and 'verifier' LoRAs
+  eval_openapps.py            3-arm (policy/rules/verifier) evaluator, per-app CompositeTask check, CDP fallback
 training/
-  losses.py                 Effective-number class weights, batch=1 fix, unilateral positive margin
-  adapter_soup.py           Cross-term-free rank-concatenated LoRA merge & equivalence verifier
+  losses.py                   Effective-number class weights, batch=1 fix, unilateral positive margin
+  adapter_soup.py             Cross-term-free rank-concatenated LoRA merge & equivalence verifier
 prm/
-  scoring.py                Single-token ABCD / AB last-position logit scoring & losses
-  controller.py             Fail-closed 7-state idempotent controller & non-idempotent stale guard
+  scoring.py                  Single-token ABCD / AB last-position logit scoring & losses
+  controller.py               Fail-closed 7-state idempotent controller & non-idempotent stale guard
 fastpe/
-  fast_patch_embed.py       Reversible Conv3d -> F.linear vision patch projection & parity auditor
-  cascade.py                Two-stage gemm -> original CascadeRunner & preset risk gates
-  benchmark_parity.py       Latency percentiles, numerical drift, argmax/risk-band flip CLI
+  fast_patch_embed.py         Reversible Conv3d -> F.linear vision patch projection & parity auditor
+  cascade.py                  Two-stage gemm -> original CascadeRunner & preset risk gates
+  benchmark_parity.py         Latency percentiles, numerical drift, argmax/risk-band flip CLI
 protocols/
-  qwen_computer_use_v2.py   Versioned <tool_call> schema, fail-closed parser, single coordinate scaling
+  qwen_computer_use_v2.py     Versioned <tool_call> schema, fail-closed parser, single coordinate scaling
 diagnostics/
-  gradient_conflict.py      144-module per-layer LoRA gradient cosine probe
-  selective_abstention.py   accept/flag/review gate, ECE, Temperature Scaling vs Platt AUC audit
+  gradient_conflict.py        144-module per-layer LoRA gradient cosine probe
+  selective_abstention.py     accept/flag/review gate, ECE, Temperature Scaling vs Platt AUC audit
 eval/
-  leak_guard.py             Identity, SHA-256 exact, and dHash+gray32 near-duplicate isolation
-  metrics_core.py           5-class Macro-F1, midrank AUC, cluster bootstrap CI, McNemar
-  v5_recompute.py           Recomputes Dev/Heldout Wilson CIs, McNemar p-values, and Verifier F1 from results/
+  leak_guard.py               Identity, SHA-256 exact, and dHash+gray32 near-duplicate isolation
+  metrics_core.py             5-class Macro-F1, midrank AUC, cluster bootstrap CI, McNemar
+  v5_recompute.py             Recomputes Dev/Heldout Wilson CIs, McNemar p-values, and Verifier F1 from results/
 results/
-  policy_dev_summary.json   Permuted 19-task Dev anonymized outcomes, Wilson CIs, and paired McNemar
+  policy_dev_summary.json     Permuted 19-task Dev anonymized outcomes, Wilson CIs, and paired McNemar
   policy_heldout_summary.json Aggregated 12-task Heldout outcomes & paired 2x2 contingency tables (task vectors withheld)
-  verifier_metrics.json     Raw 4x4 confusion matrices for Dev-936 zero-shot vs adapted_v5 & V-Val epochs
-  training_configs.json     M3 & Verifier dataset splits, overlap assertions (all 0), and LoRA configs
+  verifier_metrics.json       Raw 4x4 confusion matrices for Dev-936 zero-shot vs adapted_v5 & V-Val epochs
+  training_configs.json       M3 & Verifier dataset splits, overlap assertions (all 0), and LoRA configs
   performance_benchmarks.json PatchEmbed tensor/grad/inference parity & [0,1000]^2 grid L2 benchmarks
 tools/
-  audit_repo.py             Pre-publication size, suffix, and sensitive-pattern scanner
+  audit_repo.py               Pre-publication size, suffix, and sensitive-pattern scanner
 tests/
   test_repo_smoke.py, test_new_modules.py, test_blindspots.py, test_policy_v5.py
 ```
 
+</details>
+
 ---
 
-## 2. OpenApps Policy Post-Training & Closed-Loop Findings (`policy/`)
+## 2. OpenApps Policy Post-Training & Closed-Loop Evaluation
 
 ### 2.1 Epoch × Data Quality Double Dissociation on 19-Task Dev
 
-All V5 policy runs (`M1 Ep1/Ep2`, `M2 Ep1`, `M3 Ep1/Ep2`, `Arm B`, `Arm C`) share identical inference settings (`Qwen3-VL-8B-Instruct`, `131072` px, `1024x576` desktop, `seed=911`, `max_steps=25`, `fastPE` enabled, and official per-app-group `CompositeTask` subtask scoring in `policy/eval_openapps.py`):
+All V5 policy runs (`M1 Ep1/Ep2`, `M2 Ep1`, `M3 Ep1/Ep2`, `Arm B`, `Arm C`) share identical inference settings (`Qwen3-VL-8B-Instruct`, `131072` px, `1024×576` desktop, `seed=911`, `max_steps=25`, `fastPE` enabled, and official per-app-group `CompositeTask` subtask scoring in `policy/eval_openapps.py`):
 
 | Policy Checkpoint | Train Mix | Dev-380 NLL | 19-Dev Whole-Task | Wilson 95% CI (`n=19`) | Official Subtasks (`n=55`) |
 | --- | --- | --- | --- | --- | --- |
@@ -92,7 +137,7 @@ All V5 policy runs (`M1 Ep1/Ep2`, `M2 Ep1`, `M3 Ep1/Ep2`, `Arm B`, `Arm C`) shar
 | **`dev_m3_ep2` (`BEST_POLICY`, Step 568)** | **4,534 skill-gap M3** | **`0.03287`** | **`10/19` (`52.63%`)** | **`[0.3171, 0.7267]`** | **`37/55` (`67.27%`)** |
 
 * **Offline NLL does not predict closed-loop execution**: `dev_m1_ep1` has lower offline NLL (`0.16664`) than `dev_m1_ep2` (`0.21898`), yet completes only `2/19` online vs `9/19` (`McNemar p = 0.015625`) because Ep1 has not converged on critical form-submit button clicks. Conversely, `M2` peaks at Ep1 (`8/19`) and drops to `3/19` at Ep2 alongside observed form-abandonment events (`4` vs `0` for `M1`) and premature app switches—consistent with Ep2 overfitting noisy short-horizon visual teacher fragments (though single-variable ablations are required to isolate exact causality).
-* **Targeted Train-only skill transfer**: Filtering short/1080p teacher fragments (`209` dropped, keeping `47` multi-step) and adding `1,196` complete Train-only CPU expert gap episodes (`4,534` total rows; `0` Dev/Heldout overlap across task, episode, and SHA-256 frames) enabled `M3 Ep2` to solve both `DeleteToDo`-class Dev tasks (`0/2 -> 2/2`), reaching **`10/19` (`McNemar vs M0 p = 0.001953`)**.
+* **Targeted Train-only skill transfer**: Filtering short/1080p teacher fragments (`209` dropped, keeping `47` multi-step) and adding `1,196` complete Train-only CPU expert gap episodes (`4,534` total rows; `0` Dev/Heldout overlap across task, episode, and SHA-256 frames) enabled `M3 Ep2` to solve both `DeleteToDo`-class Dev tasks (`0/2 → 2/2`), reaching **`10/19` (`McNemar vs M0 p = 0.001953`)**.
 * **Normalized `[0, 1000]^2` click L2 recalibration (`results/performance_benchmarks.json`)**: On fixed matched intersections (`M1 ∩ M2`, `n = 139` OpenApps Dev clicks), `M1` maintains `37.17` mean Euclidean error (`p90 = 39.32`) vs `M2`'s `74.20` (`p90 = 170.36`, skewed by tail dock misclicks).
 
 ### 2.2 Controlled 3-Arm Dev & One-Shot Frozen Heldout-12 Evaluation
@@ -111,7 +156,7 @@ Using frozen `BEST_POLICY` (`M3 Ep2`), frozen `adapted_v5`, and `V-Val`-locked t
 
 ---
 
-## 3. Cross-Domain Semantic Verifier & Legacy 4-Pillar Results
+## 3. Cross-Domain Semantic Verifier & `fastPE` Benchmarks
 
 ### 3.1 OpenApps Dev-936 Semantic Verifier Adaptation (`results/verifier_metrics.json`)
 
@@ -129,24 +174,24 @@ From V4 `M0/M1/M2` Dev rollouts, `policy/step_labeler.py` builds a read-only `93
 
 Replacing Qwen3-VL's non-overlapping 3D patch `nn.Conv3d` (`kernel == stride == (2, 16, 16)`) with parameter-shared `F.linear` yields two complementary verified benchmarks (subject to non-bitwise-identical BF16 GEMM reduction order):
 
-* **OpenApps Policy SFT + Inference (`Qwen3-VL-8B` on A800 under concurrent GPU load)**: Tensor forward (`n=16`) `mean_abs=0.0`, `max_abs=0.007812` (1 BF16 ULP), `13,516.68 ms -> 2.46 ms`; LoRA gradient (`504` tensors) `loss_abs_diff=0.00615`, `global_grad_cos_sim=0.976824`, **`5.75x` end-to-end training microbatch speedup** (`32.909s -> 5.726s`); greedy inference (`20` Dev samples) **`2.21x` end-to-end speedup** (`6.638s -> 3.005s`) with `20/20` action-type parity and `18/20` exact raw match (`coord_l2_1000grid_mean=5.116`).
-* **RSWT Safety Scoring + `CascadeRunner` (`fastpe/cascade.py`, 966-row reused Test)**: Unconditional `fastPE` delivers **`50.8x` E2E P50 speedup** (`7,524.8 -> 148.0 ms`) with `15/966` (`1.55%`) argmax flips and `3` missed `1_hijack` alerts; **Alert-Safe Gate** (`p1 in [0.30, 0.75]`) runs at **`24.12x`** speedup (`313.06 ms` mean, `2.17%` fallback, `0` missed `1_hijack`); **Full-Parity Gate** (`+ conf < 0.70`) runs at **`4.62x`** (`19.77%` fallback, `0/966` argmax and risk flips).
+* **OpenApps Policy SFT + Inference (`Qwen3-VL-8B` on A800 under concurrent GPU load)**: Tensor forward (`n=16`) `mean_abs=0.0`, `max_abs=0.007812` (1 BF16 ULP), `13,516.68 ms → 2.46 ms`; LoRA gradient (`504` tensors) `loss_abs_diff=0.00615`, `global_grad_cos_sim=0.976824`, **`5.75×` end-to-end training microbatch speedup** (`32.909s → 5.726s`); greedy inference (`20` Dev samples) **`2.21×` end-to-end speedup** (`6.638s → 3.005s`) with `20/20` action-type parity and `18/20` exact raw match (`coord_l2_1000grid_mean=5.116`).
+* **RSWT Safety Scoring + `CascadeRunner` (`fastpe/cascade.py`, 966-row reused Test)**: Unconditional `fastPE` delivers **`50.8×` E2E P50 speedup** (`7,524.8 → 148.0 ms`) with `15/966` (`1.55%`) argmax flips and `3` missed `1_hijack` alerts; **Alert-Safe Gate** (`p1 ∈ [0.30, 0.75]`) runs at **`24.12×`** speedup (`313.06 ms` mean, `2.17%` fallback, `0` missed `1_hijack`); **Full-Parity Gate** (`+ conf < 0.70`) runs at **`4.62×`** (`19.77%` fallback, `0/966` argmax and risk flips).
 
-### 3.3 Core Verification, Protocol, PRM, and Calibration Summary
+### 3.3 Core Verification, Protocol, PRM & Calibration Pillars
 
 | Pillar | Key Modules & Frozen Benchmarks |
 | --- | --- |
-| **RSWT Safety Verification** | `training/losses.py` (`batch=1` class-weight fix + `pos_only` margin) & `training/adapter_soup.py` (cross-term-free rank concatenation `3.73e-9` error). On 966-row RSWT Test: `B0 47.09% -> M1-A 68.57%` (`SOUP-AE 68.77%`); `0/265` benign false alarms (`1.12%` Clopper-Pearson upper bound). |
-| **Tool Protocol & Process Supervision** | `protocols/qwen_computer_use_v2.py` (`0/80 -> 59/80` unpaired MiniWoB++ alignment) & `prm/scoring.py` + `prm/controller.py` (Judge V3 `136/136`, Learned PRM `81.04%` Macro-F1 on controlled 136-row split; 7-state controller `24/24` online, `10/10` non-idempotent guard). |
-| **Leakage, Diagnostics & Calibration** | `eval/leak_guard.py` (3-layer exact + dHash+gray32 isolation, filtering `62.51%` near-duplicates in `frozen_v1`), `diagnostics/gradient_conflict.py` (layer-28 `-0.8018` Class-4 opposition), `diagnostics/selective_abstention.py` (Temperature Scaling flips `15/22` cross-sample `p1` ROC-AUC pairs vs strictly monotonic binary Platt scaling). |
+| **RSWT Safety Verification** | `training/losses.py` (`batch=1` class-weight fix + `pos_only` margin) &amp; `training/adapter_soup.py` (cross-term-free rank concatenation `3.73e-9` error). On 966-row RSWT Test: `B0 47.09% → M1-A 68.57%` (`SOUP-AE 68.77%`); `0/265` benign false alarms (`1.12%` Clopper-Pearson upper bound). |
+| **Tool Protocol &amp; Process Supervision** | `protocols/qwen_computer_use_v2.py` (`0/80 → 59/80` unpaired MiniWoB++ alignment) &amp; `prm/scoring.py` + `prm/controller.py` (Judge V3 `136/136`, Learned PRM `81.04%` Macro-F1 on controlled 136-row split; 7-state controller `24/24` online, `10/10` non-idempotent guard). |
+| **Leakage, Diagnostics &amp; Calibration** | `eval/leak_guard.py` (3-layer exact + `dHash+gray32` isolation, filtering `62.51%` near-duplicates in `frozen_v1`), `diagnostics/gradient_conflict.py` (layer-28 `-0.8018` Class-4 opposition), `diagnostics/selective_abstention.py` (Temperature Scaling flips `15/22` cross-sample `p1` ROC-AUC pairs vs strictly monotonic binary Platt scaling). |
 
 ---
 
-## 4. Two-Tier Reproducibility & Verification
+## 4. Reproducing & Verification
 
 ### Tier 1: CPU Quick Check (Works Out-of-the-Box, ~5 Seconds)
 
-Requires only Python `>= 3.10`, CPU PyTorch, and `pytest`. Runs repo hygiene audits, unit tests across all 7 packages, and independent mathematical recomputation of Dev-19 metrics from permuted anonymized per-task records, Heldout-12 Wilson CIs & exact McNemar `p`-values from aggregate counts and paired 2x2 contingency tables (with per-task vectors withheld), and Verifier F1/recall tables from raw 4x4 confusion matrices in `results/`:
+Requires only Python `>= 3.10`, CPU PyTorch, and `pytest`. Runs repo hygiene audits, all **51** unit tests across all 7 packages, and independent mathematical recomputation of Dev-19 metrics from permuted anonymized per-task records, Heldout-12 Wilson CIs &amp; exact McNemar `p`-values from aggregate counts and paired 2×2 contingency tables (with per-task vectors withheld), and Verifier F1/recall tables from raw 4×4 confusion matrices in `results/`:
 
 ```bash
 python -m venv .venv
@@ -158,9 +203,12 @@ python -B -m pytest -p no:cacheprovider -v
 python -B -m eval.v5_recompute
 ```
 
-### Tier 2: Full GPU Training & Live OpenApps Evaluation (External Prerequisites Required)
+### Tier 2: Full GPU Training & Live OpenApps Evaluation
 
-Full training and online closed-loop runs via the `policy/` reference pipeline additionally require local `Qwen/Qwen3-VL-8B-Instruct` weights, `transformers` + `peft` + `Pillow` (`pip install ".[all]"`), and an external Playwright + BrowserGym + OpenApps installation (not bundled):
+Full training and live closed-loop evaluation via the `policy/` reference pipeline additionally require local `Qwen/Qwen3-VL-8B-Instruct` weights, `transformers` + `peft` + `Pillow` (`pip install ".[all]"`), and an external Playwright + BrowserGym + OpenApps installation (not bundled).
+
+<details>
+<summary>Full GPU Training, Dual-LoRA Serving &amp; 3-Arm Evaluation Commands (click to expand)</summary>
 
 ```bash
 # 1. Policy LoRA SFT (M3)
@@ -181,12 +229,14 @@ python -B -m policy.eval_openapps --run-tag heldout_arm_c --split heldout --mode
   --tasks-yaml /path/to/longer_horizon.yaml --output-dir runs/eval --confirm-one-shot-heldout
 ```
 
+</details>
+
 ---
 
-## 5. Honest Counter-Evidence, Limitations, and Licensing
+## 5. Honest Counter-Evidence, Limitations & Licensing
 
-1. **Online Verifier Did Not Improve End-to-End Task Success (`Arm C`) & Historical `batch=1` Class-Weight Cancellation**: While `adapted_v5` cuts Dev-936 true-progress false alarms from `66%–90%` to `0.14%` and raises `Macro-F1` to `0.4510`, semantic-error Class-C recall is only **`7.50%`** (`12/160`). With conservative `V-Val` thresholds (`0.65/0.65`) and a strong `M3` policy (`0` invalid actions), Dev stayed tied (`10/19`) and Heldout moved from `7/12` (`Arm A/B`) to `6/12` (`Arm C`, `p=1.0`). Crucially, on that single diverged task, the Verifier intervened **0 times** across 25 steps (step-6 dock click divergence under dual-LoRA runtime rather than an erroneous intervention), while adding `~0.76s/step` total overhead. In addition, post-hoc code audit of the historical V5 Verifier training run (`policy/train_verifier_sft.py`) revealed that `F.cross_entropy(logits, tgt, weight=cls_weights)` under `micro_batch_size=1` mathematically cancels class weights in PyTorch's default weighted-mean reduction (`w_y * nll / w_y = nll`), even with gradient accumulation. This proves the historical Verifier run did not apply the intended class weights; however, whether adapting `training/losses.py`'s `batch=1` per-sample weighting fix from 5-class RSWT to 4-class OpenApps improves Class-C recall remains an open hypothesis requiring an independent retraining ablation.
-2. **Small-Sample Evaluation Bounds**: Dev (`n=19`) and one-shot Heldout (`n=12`, 6 components) carry wide 95% Wilson CIs (`> ±20 pp`), supporting significant gains over zero-shot `M0` (`p=0.0156` / `p=0.0020`) rather than fine-grained `±1` task comparisons. For Heldout-12, per-task vectors and subtask counts are withheld to prevent combinatorial re-identification, while aggregate counts and paired 2x2 contingency tables preserve exact Wilson CI and McNemar recomputation; Dev-19 applies a deterministic permutation as pragmatic anonymization rather than a formal privacy guarantee.
-3. **BF16 Numerical Drift in Operator & Dual-LoRA Paths**: `FastPatchEmbed` is algebraically exact in FP64 (`<1e-12`) but exhibits BF16 reduction-order drift (`15/966` RSWT argmax flips; `18/20` exact raw match & `grad_cos_sim=0.976824` on Qwen3-VL Policy), requiring empirical parity checks before deployment on safety-critical paths.
-4. **Legacy Methodological Boundaries**: `E4` modality ablation (`-0.7 pp` removing action text on RSWT), `Class-4` local visual ambiguity (`11/12` Dev triples), `Judge V3`/`PRM` controlled MiniWoB scope, and reused 966-row RSWT Test splits remain transparently disclosed.
-5. **Licensing & Withheld Assets**: Original source code in this repository is released under the **Apache License 2.0** (`LICENSE`). No model checkpoints, screenshots, private paths, or third-party benchmark code are redistributed here. Experiments against **OpenApps** rely on its upstream repository (licensed under **CC BY-NC 4.0**, with bundled map/shop/icon assets subject to their respective upstream attributions), and checkpoints from `Qwen3-VL-8B-Instruct` remain governed by their upstream license.
+* **Online Verifier Did Not Improve End-to-End Task Success (`Arm C`) &amp; Historical `batch=1` Class-Weight Cancellation**: While `adapted_v5` cuts Dev-936 true-progress false alarms from `66%–90%` to `0.14%` and raises `Macro-F1` to `0.4510`, semantic-error Class-C recall is only **`7.50%`** (`12/160`). With conservative `V-Val` thresholds (`0.65/0.65`) and a strong `M3` policy (`0` invalid actions), Dev stayed tied (`10/19`) and Heldout moved from `7/12` (`Arm A/B`) to `6/12` (`Arm C`, `p=1.0`). On that single diverged task, the Verifier intervened **0 times** across 25 steps (step-6 dock click divergence under dual-LoRA runtime rather than an erroneous intervention), while adding `~0.76s/step` overhead. In addition, post-hoc audit of the historical V5 Verifier training run (`policy/train_verifier_sft.py`) revealed that `F.cross_entropy(logits, tgt, weight=cls_weights)` under `micro_batch_size=1` mathematically cancels class weights in PyTorch's default weighted-mean reduction (`w_y * nll / w_y = nll`), even with gradient accumulation. This proves the historical Verifier run did not apply the intended class weights; whether adapting `training/losses.py`'s `batch=1` per-sample weighting fix from 5-class RSWT to 4-class OpenApps improves Class-C recall remains an open hypothesis requiring an independent retraining ablation.
+* **Small-Sample Evaluation Bounds**: Dev (`n=19`) and one-shot Heldout (`n=12`, 6 components) carry wide 95% Wilson CIs (`> ±20 pp`), supporting significant gains over zero-shot `M0` (`p=0.0156` / `p=0.0020`) rather than fine-grained `±1` task comparisons. For Heldout-12, per-task vectors and subtask counts are withheld to prevent combinatorial re-identification, while aggregate counts and paired 2×2 contingency tables preserve exact Wilson CI and McNemar recomputation; Dev-19 applies a deterministic permutation as pragmatic anonymization rather than a formal privacy guarantee.
+* **BF16 Numerical Drift in Operator &amp; Dual-LoRA Paths**: `FastPatchEmbed` is algebraically exact in FP64 (`<1e-12`) but exhibits BF16 reduction-order drift (`15/966` RSWT argmax flips; `18/20` exact raw match &amp; `grad_cos_sim=0.976824` on Qwen3-VL Policy), requiring empirical parity checks before deployment on safety-critical paths.
+* **Legacy Methodological Boundaries**: `E4` modality ablation (`-0.7 pp` removing action text on RSWT), `Class-4` local visual ambiguity (`11/12` Dev triples), `Judge V3`/`PRM` controlled MiniWoB scope, and reused 966-row RSWT Test splits remain transparently disclosed.
+* **Licensing &amp; Withheld Assets**: Original source code in this repository is released under the **Apache License 2.0** (`LICENSE`). No model checkpoints, screenshots, private paths, or third-party benchmark code are redistributed here. Experiments against **OpenApps** rely on its upstream repository (licensed under **CC BY-NC 4.0**, with bundled map/shop/icon assets subject to their respective upstream attributions), and checkpoints from `Qwen3-VL-8B-Instruct` remain governed by their upstream license.
