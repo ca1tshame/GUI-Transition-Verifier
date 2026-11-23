@@ -42,6 +42,7 @@ runs/
 *.mp4
 !assets/
 !assets/*.gif
+!assets/*.png
 
 # Local configuration and secrets
 .env

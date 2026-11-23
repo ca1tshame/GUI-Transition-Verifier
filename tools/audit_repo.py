@@ -30,8 +30,8 @@ from dataclasses import dataclass, field
 
 MAX_BYTES = 2 * 1024 * 1024
 
-# Non-screenshot visual documentation GIFs under assets/ are explicitly permitted.
-ALLOWED_ASSET_SUFFIXES = {".gif"}
+# Non-screenshot visual documentation assets under assets/ are explicitly permitted.
+ALLOWED_ASSET_SUFFIXES = {".gif", ".png"}
 
 FORBIDDEN_SUFFIXES = {
     ".png",
