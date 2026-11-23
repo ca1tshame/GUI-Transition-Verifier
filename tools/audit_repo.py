@@ -30,6 +30,9 @@ from dataclasses import dataclass, field
 
 MAX_BYTES = 2 * 1024 * 1024
 
+# Non-screenshot visual documentation GIFs under assets/ are explicitly permitted.
+ALLOWED_ASSET_SUFFIXES = {".gif"}
+
 FORBIDDEN_SUFFIXES = {
     ".png",
     ".jpg",
@@ -149,7 +152,11 @@ def audit(root: pathlib.Path, *, tracked_only: bool = False) -> AuditResult:
 
         if size > MAX_BYTES:
             result.oversized.append({"path": relative, "bytes": size})
-        if path.suffix.lower() in FORBIDDEN_SUFFIXES:
+        is_allowed_asset = (
+            relative.startswith("assets/")
+            and path.suffix.lower() in ALLOWED_ASSET_SUFFIXES
+        )
+        if path.suffix.lower() in FORBIDDEN_SUFFIXES and not is_allowed_asset:
             result.forbidden_files.append({"path": relative, "suffix": path.suffix.lower()})
 
         if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}:

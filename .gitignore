@@ -40,6 +40,8 @@ runs/
 *.bmp
 *.webp
 *.mp4
+!assets/
+!assets/*.gif
 
 # Local configuration and secrets
 .env
